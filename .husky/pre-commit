@@ -1,0 +1,17 @@
+# #!/bin/sh
+# . "$(dirname "$0")/_/husky.sh"
+
+# # Check admin if it changed
+# if git diff --cached --name-only | grep -q '^admin/'; then
+#   echo "🔍 Linting admin"
+#   cd admin && npm run lint && cd ..
+# fi
+
+# # Check code if it changed
+# if git diff --cached --name-only | grep -q '^code/'; then
+#   echo "🔍 Linting code"
+#   cd code && npm run lint && cd ..
+# fi
+
+echo "Running linting and formatting checks..."
+npx lint-staged

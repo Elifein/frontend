@@ -1,0 +1,33 @@
+# Ignore node_modules everywhere
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+
+# Logs
+*.log
+
+# Dependency lock files (optional, if you want centralized control)
+package-lock.json
+
+# Coverage and reports
+coverage/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Husky
+.husky/_
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.pid
+*.sock
+docker-compose.override.yml

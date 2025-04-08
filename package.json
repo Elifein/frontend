@@ -1,0 +1,26 @@
+{
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint:admin && npm run lint:code",
+    "lint:admin": "npm --workspace=admin run lint",
+    "lint:code": "npm --workspace=code run lint",
+    "format": "prettier --write .",
+    "prepare": "husky install",
+    "lint-staged": "lint-staged"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.0.0"
+  },
+  "lint-staged": {
+    "admin/src/**/*.{js,ts,tsx}": "npm --prefix admin run lint",
+    "code/src/**/*.{js,ts,tsx}": "npm --prefix code run lint",
+    "*.{js,ts,tsx,css,scss,md,json}": "prettier --write"
+  }
+}
