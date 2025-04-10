@@ -9,8 +9,6 @@ dist/
 # Logs
 *.log
 
-# Dependency lock files (optional, if you want centralized control)
-package-lock.json
 
 # Coverage and reports
 coverage/
