@@ -50,7 +50,6 @@
 # # Set the command to start the Next.js application
 # CMD ["npm", "run", "start"]
 
-
 # Step 1: Use Node.js image for the build stage
 FROM node:18 AS builder
 
@@ -84,12 +83,13 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/src ./src
 
+# Copy .env.production to the container
+COPY .env.production .env
+
+
 # Install only production dependencies
 RUN npm install --omit=dev
 
-# Copy .env.production to the container
-COPY .env.production .env
- 
 # Prevent Husky or other dev scripts from triggering
 ENV HUSKY=0
 ENV NODE_ENV=production

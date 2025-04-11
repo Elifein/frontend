@@ -83,16 +83,17 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/src ./src
 
+# Copy .env.production to the container
+COPY .env.production .env
+
+
 # Install only production dependencies
 RUN npm install --omit=dev
 
-# Copy .env.production to the container
-COPY .env.production .env
- 
 # Prevent Husky or other dev scripts from triggering
 ENV HUSKY=0
 ENV NODE_ENV=production
 
-EXPOSE 3000
+EXPOSE 3001
 
 CMD ["npm", "run", "start"]
