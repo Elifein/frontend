@@ -2,7 +2,7 @@
 
 import type React from 'react';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -27,13 +27,20 @@ import {
   AlertTitle,
 } from '../../../../components/ui/alert';
 
-// Sample parent categories for the dropdown
-const parentCategories = [
-  { id: '1', name: 'Electronics' },
-  { id: '5', name: 'Clothing' },
-  { id: '8', name: 'Home & Kitchen' },
-  { id: '9', name: 'Beauty' },
-];
+import axiosInstance from '../../../../lib/axiosInstance';
+
+interface Subcategory {
+  subcategory_id: string;
+  subcategory_name: string;
+  slug: string;
+  description: string;
+  meta_title: string;
+  meta_description: string;
+  imgthumbnail: string;
+  featured_category: boolean;
+  show_in_menu: boolean;
+  status: boolean;
+}
 
 export default function AddCategoryPage() {
   const router = useRouter();
@@ -43,11 +50,12 @@ export default function AddCategoryPage() {
     name: '',
     slug: '',
     description: '',
-    parentCategory: '',
+    parent: '',
     featured: false,
-    showInMenu: true,
-    metaTitle: '',
-    metaDescription: '',
+    show_in_menu: true,
+    meta_title: '',
+    meta_description: '',
+    status: false,
   });
 
   const [image, setImage] = useState<{ file: File | null; preview: string }>({
@@ -57,6 +65,30 @@ export default function AddCategoryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const [parentOptions, setParentOptions] = useState<
+    {
+      category_id: string;
+      category_name: string;
+      subcategories: Subcategory[];
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get('/get-categories/');
+        if (response.data?.data) {
+          setParentOptions(response.data.data); // Directly use the data array
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError('Failed to load parent categories. Please try again.');
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -109,22 +141,56 @@ export default function AddCategoryPage() {
     setError('');
 
     try {
-      // Validate required fields
       if (!formData.name) {
         throw new Error('Category name is required');
       }
 
-      // In a real app, you would upload image and submit form data to your API
-      // For this example, we'll simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const submissionData = new FormData();
+      submissionData.append('name', formData.name);
+      submissionData.append('slug', formData.slug);
+      submissionData.append('description', formData.description);
+      submissionData.append(
+        'parent',
+        formData.parent === 'none' ? '' : formData.parent
+      );
+      submissionData.append('featured', String(formData.featured));
+      submissionData.append('show_in_menu', String(formData.show_in_menu));
+      submissionData.append('meta_title', formData.meta_title);
+      submissionData.append('meta_description', formData.meta_description);
+      submissionData.append('status', String(formData.status));
+      if (image.file) {
+        submissionData.append('file', image.file);
+      }
 
-      setSuccess(true);
+      const response = await axiosInstance.post(
+        '/create-product-categories/',
+        submissionData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
-      // Reset form after successful submission
-      setTimeout(() => {
-        router.push('/categories');
-      }, 2000);
+      if (response.status === 200) {
+        console.log('Category added successfully:', response.data);
+        setSuccess(true);
+        setFormData({
+          name: '',
+          slug: '',
+          description: '',
+          parent: '',
+          featured: false,
+          show_in_menu: true,
+          meta_title: '',
+          meta_description: '',
+          status: false,
+        });
+        setImage({ file: null, preview: '' });
+        setTimeout(() => router.push('/categories'), 2000);
+      }
     } catch (err) {
+      console.error('Submission error:', err);
       setError(
         err instanceof Error
           ? err.message
@@ -248,7 +314,7 @@ export default function AddCategoryPage() {
                   <Label htmlFor="showInMenu">Show in Menu</Label>
                   <Switch
                     id="showInMenu"
-                    checked={formData.showInMenu}
+                    checked={formData.show_in_menu}
                     onCheckedChange={(checked) =>
                       setFormData((prev) => ({ ...prev, showInMenu: checked }))
                     }
@@ -296,13 +362,13 @@ export default function AddCategoryPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentCategory">Parent Category</Label>
+                    <Label htmlFor="parent">Parent Category</Label>
                     <Select
-                      value={formData.parentCategory}
+                      value={formData.parent}
                       onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
-                          parentCategory: value,
+                          parent: value,
                         }))
                       }
                     >
@@ -313,9 +379,12 @@ export default function AddCategoryPage() {
                         <SelectItem value="none">
                           None (top level category)
                         </SelectItem>
-                        {parentCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
+                        {parentOptions.map((category) => (
+                          <SelectItem
+                            key={category.category_id}
+                            value={category.category_id}
+                          >
+                            {category.category_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -347,24 +416,24 @@ export default function AddCategoryPage() {
 
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="metaTitle">Meta Title</Label>
+                        <Label htmlFor="meta_title">Meta Title</Label>
                         <Input
-                          id="metaTitle"
-                          name="metaTitle"
-                          value={formData.metaTitle}
+                          id="meta_title"
+                          name="meta_title"
+                          value={formData.meta_title}
                           onChange={handleInputChange}
                           placeholder="Enter meta title"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="metaDescription">
+                        <Label htmlFor="meta_description">
                           Meta Description
                         </Label>
                         <Textarea
-                          id="metaDescription"
-                          name="metaDescription"
-                          value={formData.metaDescription}
+                          id="meta_description"
+                          name="meta_description"
+                          value={formData.meta_description}
                           onChange={handleInputChange}
                           placeholder="Enter meta description"
                           rows={3}

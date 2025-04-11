@@ -87,6 +87,9 @@ COPY --from=builder /app/src ./src
 # Install only production dependencies
 RUN npm install --omit=dev
 
+# Copy .env.production to the container
+COPY .env.production .env
+ 
 # Prevent Husky or other dev scripts from triggering
 ENV HUSKY=0
 ENV NODE_ENV=production

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -38,139 +38,125 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../components/ui/select';
+import axiosInstance from '../../../lib/axiosInstance';
 
-// Sample products data
-const products = [
-  {
-    id: '1',
-    name: 'Minimalist Desk Lamp',
-    price: 49.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Home Decor',
-    stock: 45,
-    status: 'In Stock',
-    featured: true,
-    sku: 'LAMP-001',
-    dateAdded: '2023-06-12',
-  },
-  {
-    id: '2',
-    name: 'Leather Weekender Bag',
-    price: 129.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Accessories',
-    stock: 12,
-    status: 'In Stock',
-    featured: false,
-    sku: 'BAG-002',
-    dateAdded: '2023-06-10',
-  },
-  {
-    id: '3',
-    name: 'Wireless Earbuds',
-    price: 89.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Electronics',
-    stock: 28,
-    status: 'In Stock',
-    featured: true,
-    sku: 'AUDIO-003',
-    dateAdded: '2023-06-08',
-  },
-  {
-    id: '4',
-    name: 'Ceramic Coffee Mug',
-    price: 24.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Kitchen',
-    stock: 56,
-    status: 'In Stock',
-    featured: false,
-    sku: 'MUG-004',
-    dateAdded: '2023-06-05',
-  },
-  {
-    id: '5',
-    name: 'Smart Watch',
-    price: 199.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Electronics',
-    stock: 8,
-    status: 'Low Stock',
-    featured: true,
-    sku: 'WATCH-005',
-    dateAdded: '2023-06-03',
-  },
-  {
-    id: '6',
-    name: 'Cotton T-Shirt',
-    price: 29.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Clothing',
-    stock: 0,
-    status: 'Out of Stock',
-    featured: false,
-    sku: 'SHIRT-006',
-    dateAdded: '2023-06-01',
-  },
-  {
-    id: '7',
-    name: 'Stainless Steel Water Bottle',
-    price: 34.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Kitchen',
-    stock: 32,
-    status: 'In Stock',
-    featured: false,
-    sku: 'BOTTLE-007',
-    dateAdded: '2023-05-28',
-  },
-  {
-    id: '8',
-    name: 'Bluetooth Speaker',
-    price: 79.99,
-    image: '/images/placeholder.svg?height=50&width=50',
-    category: 'Electronics',
-    stock: 15,
-    status: 'In Stock',
-    featured: true,
-    sku: 'SPEAKER-008',
-    dateAdded: '2023-05-25',
-  },
-];
+interface Product {
+  product_id: string;
+  cat_id: string;
+  subcat_id: string | null;
+  identification: {
+    product_name: string;
+    product_sku: string;
+  };
+  descriptions: {
+    short_description: string;
+    full_description: string;
+  } | null;
+  pricing: {
+    actual_price: string;
+    selling_price: string;
+  } | null;
+  inventory: {
+    quantity: string;
+    stock_alert_status: string;
+  } | null;
+  physical_attributes: {
+    weight: string;
+    dimensions: { length: string; width: string; height: string };
+    shipping_class: string;
+  } | null;
+  images: { urls: string[] } | null;
+  tags_and_relationships: {
+    product_tags: string[];
+    linkedproductid: string;
+  } | null;
+  status_flags: {
+    featured_product: boolean;
+    published_product: boolean;
+    product_status: boolean;
+  };
+  timestamp: string;
+}
 
-// Sample categories for filtering
-const categories = [
-  { id: 'all', name: 'All Categories' },
-  { id: 'electronics', name: 'Electronics' },
-  { id: 'clothing', name: 'Clothing' },
-  { id: 'kitchen', name: 'Kitchen' },
-  { id: 'home-decor', name: 'Home Decor' },
-  { id: 'accessories', name: 'Accessories' },
-];
+interface Category {
+  category_id: string;
+  category_name: string;
+}
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axiosInstance.get('/products/');
+        // Handle successful response
+        if (response.status === 200) {
+          // Check if response.data is an array (direct product list) or APIResponse
+          if (Array.isArray(response.data)) {
+            setProducts(response.data);
+          } else if (response.data?.status_code === 404) {
+            setError('No products found.');
+            setProducts([]);
+          } else {
+            throw new Error('Unexpected response format');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setError(
+          error.response?.data?.message ||
+            'Failed to load products. Please try again.'
+        );
+        setProducts([]);
+      }
+    };
+
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get('/get-categories/');
+        if (response.data?.data) {
+          setCategories(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError('Failed to load parent categories. Please try again.');
+      }
+    };
+
+    fetchProducts();
+    fetchCategories();
+  }, []);
+
   const filteredProducts = products.filter((product) => {
     // Search filter
     const matchesSearch =
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.toLowerCase());
+      (product.identification?.product_name?.toLowerCase() || '').includes(
+        searchQuery.toLowerCase()
+      ) ||
+      (product.identification?.product_sku?.toLowerCase() || '').includes(
+        searchQuery.toLowerCase()
+      );
 
     // Category filter
     const matchesCategory =
       categoryFilter === 'all' ||
-      product.category.toLowerCase() === categoryFilter.toLowerCase();
+      product.cat_id.toLowerCase() === categoryFilter.toLowerCase();
 
     // Status filter
     const matchesStatus =
       statusFilter === 'all' ||
-      product.status.toLowerCase().replace(/\s+/g, '-') ===
-        statusFilter.toLowerCase();
+      (statusFilter === 'published' &&
+        product.status_flags.published_product) ||
+      (statusFilter === 'unpublished' &&
+        !product.status_flags.published_product);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -187,7 +173,9 @@ export default function ProductsPage() {
     if (selectedProducts.length === filteredProducts.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(filteredProducts.map((product) => product.id));
+      setSelectedProducts(
+        filteredProducts.map((product) => product.product_id)
+      );
     }
   };
 
@@ -228,6 +216,11 @@ export default function ProductsPage() {
               Add Product
             </Link>
           </Button>
+          {error && (
+            <div className="mb-4 rounded-md border border-red-500 bg-red-100 p-4 text-red-700">
+              {error}
+            </div>
+          )}
         </div>
       </div>
 
@@ -237,9 +230,13 @@ export default function ProductsPage() {
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
+              <SelectItem
+                key={category.category_id}
+                value={category.category_id}
+              >
+                {category.category_name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -338,19 +335,23 @@ export default function ProductsPage() {
               </TableRow>
             ) : (
               filteredProducts.map((product) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.product_id}>
                   <TableCell>
                     <Checkbox
-                      checked={selectedProducts.includes(product.id)}
-                      onCheckedChange={() => toggleProductSelection(product.id)}
-                      aria-label={`Select ${product.name}`}
+                      checked={selectedProducts.includes(product.product_id)}
+                      onCheckedChange={() =>
+                        toggleProductSelection(product.product_id)
+                      }
+                      aria-label={`Select ${product.identification.product_name}`}
                     />
                   </TableCell>
                   <TableCell>
                     <div className="h-10 w-10 overflow-hidden rounded-md border">
                       <Image
-                        src={product.image || '/images/placeholder.svg'}
-                        alt={product.name}
+                        src={
+                          product.images?.urls[0] || '/images/placeholder.svg'
+                        }
+                        alt={product.identification.product_name}
                         width={40}
                         height={40}
                         className="h-full w-full object-cover"
@@ -358,34 +359,46 @@ export default function ProductsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{product.name}</div>
-                    {product.featured && (
+                    <div className="font-medium">
+                      {product.identification.product_name}
+                    </div>
+                    {product.status_flags.featured_product && (
                       <Badge variant="outline" className="mt-1">
                         Featured
                       </Badge>
                     )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell font-mono text-sm">
-                    {product.sku}
+                    {product.identification.product_sku}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {product.category}
+                    {categories.find(
+                      (cat) => cat.category_id === product.cat_id
+                    )?.category_name || product.cat_id}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    ${product.price.toFixed(2)}
+                    $
+                    {parseFloat(
+                      product.pricing?.selling_price ||
+                        product.pricing?.actual_price ||
+                        '0'
+                    ).toFixed(2)}
                   </TableCell>
-                  <TableCell className="text-center">{product.stock}</TableCell>
+                  <TableCell className="text-center">
+                    {product.inventory?.quantity || '0'}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-center">
                     <Badge
                       variant={
-                        product.status === 'In Stock'
+                        product.inventory?.stock_alert_status === 'instock'
                           ? 'default'
-                          : product.status === 'Low Stock'
+                          : product.inventory?.stock_alert_status ===
+                              'backorder'
                             ? 'secondary'
                             : 'destructive'
                       }
                     >
-                      {product.status}
+                      {product.inventory?.stock_alert_status || 'N/A'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -399,25 +412,17 @@ export default function ProductsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/products/edit/${product.id}`}
+                            href={`/products/edit/${product.product_id}`}
                             className="flex items-center"
                           >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                            <Edit className="mr-2 h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>
-                        {/* <DropdownMenuItem asChild>
-                          <Link href={`/products/${product.id}`} className="flex items-center">
-                            <ChevronDown className="mr-2 h-4 w-4" />
-                            View
-                          </Link>
-                        </DropdownMenuItem> */}
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDelete(product.id)}
+                          onClick={() => handleDelete(product.product_id)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

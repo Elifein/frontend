@@ -9,7 +9,7 @@ import FooterSection from '../components/footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Desismart E-commerce Application',
+  title: 'Elife E-commerce Application',
   description: 'Your friendly Indian E-commerce Store in UK',
 };
 

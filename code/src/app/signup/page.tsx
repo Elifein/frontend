@@ -1,14 +1,77 @@
 // import { Logo } from '@/components/logo'
+
+'use client';
 import Logo from '../../components/logo';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import Link from 'next/link';
+import axiosInstance from '../../lib/axiosInstance';
+import { useState, FormEvent } from 'react';
+import useStore from '../../lib/Zustand';
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { validateName, validateEmail, validatePassword } = useStore();
+
+  const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    // Reset errors
+    setErrors({});
+
+    // Validate inputs
+    const firstnameValidation = validateName(firstname);
+    const lastnameValidation = validateName(lastname);
+    const emailValidation = validateEmail(email);
+    const passwordValidation = validatePassword(password);
+
+    // Collect errors if any
+    const newErrors: Record<string, string> = {};
+    if (!firstnameValidation.isValid) {
+      newErrors.firstname = firstnameValidation.error!;
+    }
+    if (!lastnameValidation.isValid) {
+      newErrors.lastname = lastnameValidation.error!;
+    }
+    if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.error!;
+    }
+    if (!passwordValidation.isValid) {
+      newErrors.password = passwordValidation.error!;
+    }
+
+    // If there are errors, update state and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Proceed with API call if validation passes
+    try {
+      const response = await axiosInstance.post('/user-registration/', {
+        user_firstname: firstname,
+        user_lastname: lastname,
+        user_email: email,
+        user_password: password,
+      });
+      console.log('Signup successful:', response.data);
+      // Optionally, call login from Zustand here if the API returns a token
+    } catch (error) {
+      console.error('Signup failed:', error);
+      setErrors({ general: 'Something went wrong. Please try again.' });
+    }
+  };
+
   return (
     <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
       <form
+        onSubmit={handleSignup}
         action=""
         className="bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)]"
       >
@@ -80,13 +143,33 @@ export default function LoginPage() {
                 <Label htmlFor="firstname" className="block text-sm">
                   Firstname
                 </Label>
-                <Input type="text" required name="firstname" id="firstname" />
+                <Input
+                  type="text"
+                  required
+                  name="firstname"
+                  id="firstname"
+                  value={firstname}
+                  onChange={(e) => setFirstname(e.target.value)}
+                />
+                {errors.firstname && (
+                  <p className="text-red-500 text-xs">{errors.firstname}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastname" className="block text-sm">
                   Lastname
                 </Label>
-                <Input type="text" required name="lastname" id="lastname" />
+                <Input
+                  type="text"
+                  required
+                  name="lastname"
+                  id="lastname"
+                  value={lastname}
+                  onChange={(e) => setLastname(e.target.value)}
+                />
+                {errors.lastname && (
+                  <p className="text-red-500 text-xs">{errors.lastname}</p>
+                )}
               </div>
             </div>
 
@@ -94,7 +177,17 @@ export default function LoginPage() {
               <Label htmlFor="email" className="block text-sm">
                 Username
               </Label>
-              <Input type="email" required name="email" id="email" />
+              <Input
+                type="email"
+                required
+                name="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -106,11 +199,21 @@ export default function LoginPage() {
                 required
                 name="pwd"
                 id="pwd"
-                className="input sz-md variant-mixed"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
+              {errors.password && (
+                <p className="text-red-500 text-xs">{errors.password}</p>
+              )}
             </div>
 
-            <Button className="w-full">Continue</Button>
+            {errors.general && (
+              <p className="text-red-500 text-sm">{errors.general}</p>
+            )}
+
+            <Button className="w-full" type="submit">
+              Continue
+            </Button>
           </div>
         </div>
 

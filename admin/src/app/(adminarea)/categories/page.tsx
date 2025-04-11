@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -10,6 +10,7 @@ import {
   Trash2,
   MoreHorizontal,
   ArrowUpDown,
+  ChevronDown,
 } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -30,108 +31,59 @@ import {
 } from '../../../components/ui/dropdown-menu';
 import { Badge } from '../../../components/ui/badge';
 import { Checkbox } from '../../../components/ui/checkbox';
+import axiosInstance from '../../../lib/axiosInstance';
 
-// Sample categories data
-const categories = [
-  {
-    id: '1',
-    name: 'Electronics',
-    slug: 'electronics',
-    description: 'Electronic devices and gadgets',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 42,
-    featured: true,
-    parent: null,
-  },
-  {
-    id: '2',
-    name: 'Smartphones',
-    slug: 'smartphones',
-    description: 'Mobile phones and accessories',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 18,
-    featured: false,
-    parent: 'Electronics',
-  },
-  {
-    id: '3',
-    name: 'Laptops',
-    slug: 'laptops',
-    description: 'Notebook computers and accessories',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 15,
-    featured: true,
-    parent: 'Electronics',
-  },
-  {
-    id: '4',
-    name: 'Audio',
-    slug: 'audio',
-    description: 'Headphones, speakers and audio equipment',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 9,
-    featured: false,
-    parent: 'Electronics',
-  },
-  {
-    id: '5',
-    name: 'Clothing',
-    slug: 'clothing',
-    description: 'Apparel and fashion items',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 36,
-    featured: true,
-    parent: null,
-  },
-  {
-    id: '6',
-    name: 'Men',
-    slug: 'men',
-    description: "Men's clothing and accessories",
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 14,
-    featured: false,
-    parent: 'Clothing',
-  },
-  {
-    id: '7',
-    name: 'Women',
-    slug: 'women',
-    description: "Women's clothing and accessories",
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 22,
-    featured: false,
-    parent: 'Clothing',
-  },
-  {
-    id: '8',
-    name: 'Home & Kitchen',
-    slug: 'home-kitchen',
-    description: 'Home goods and kitchen appliances',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 28,
-    featured: true,
-    parent: null,
-  },
-  {
-    id: '9',
-    name: 'Beauty',
-    slug: 'beauty',
-    description: 'Beauty and personal care products',
-    image: '/images/placeholder.svg?height=40&width=40',
-    productsCount: 19,
-    featured: false,
-    parent: null,
-  },
-];
+interface Subcategory {
+  subcategory_id: string;
+  subcategory_name: string;
+  slug: string;
+  description: string;
+  meta_title: string;
+  meta_description: string;
+  imgthumbnail: string;
+  featured_category: boolean;
+  show_in_menu: boolean;
+  status: boolean;
+}
 
 export default function CategoriesPage() {
+  const [categories, setCategories] = useState<
+    {
+      category_id: string;
+      category_name: string;
+      slug: string;
+      description: string;
+      imgthumbnail: string | null;
+      featured_category: boolean;
+      subcategories: Subcategory[];
+    }[]
+  >([]);
+
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get('/get-categories/');
+        if (response.data?.data) {
+          setCategories(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError('Failed to load parent categories. Please try again.');
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const filteredCategories = categories.filter(
     (category) =>
-      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      category.category_name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
       category.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -147,7 +99,9 @@ export default function CategoriesPage() {
     if (selectedCategories.length === filteredCategories.length) {
       setSelectedCategories([]);
     } else {
-      setSelectedCategories(filteredCategories.map((category) => category.id));
+      setSelectedCategories(
+        filteredCategories.map((category) => category.category_id)
+      );
     }
   };
 
@@ -190,6 +144,11 @@ export default function CategoriesPage() {
               Add Category
             </Link>
           </Button>
+          {error && (
+            <div className="mb-4 rounded-md border border-red-500 bg-red-100 p-4 text-red-700">
+              {error}
+            </div>
+          )}
         </div>
       </div>
 
@@ -233,7 +192,7 @@ export default function CategoriesPage() {
               </TableHead>
               <TableHead className="hidden md:table-cell">Slug</TableHead>
               <TableHead className="hidden md:table-cell">Parent</TableHead>
-              <TableHead className="text-center">Products</TableHead>
+              {/* <TableHead className="text-center">Products</TableHead> */}
               <TableHead className="text-center">Featured</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -247,28 +206,32 @@ export default function CategoriesPage() {
               </TableRow>
             ) : (
               filteredCategories.map((category) => (
-                <TableRow key={category.id}>
+                <TableRow key={category.category_id}>
                   <TableCell>
                     <Checkbox
-                      checked={selectedCategories.includes(category.id)}
+                      checked={selectedCategories.includes(
+                        category.category_id
+                      )}
                       onCheckedChange={() =>
-                        toggleCategorySelection(category.id)
+                        toggleCategorySelection(category.category_id)
                       }
-                      aria-label={`Select ${category.name}`}
+                      aria-label={`Select ${category.category_name}`}
                     />
                   </TableCell>
                   <TableCell>
                     <div className="h-10 w-10 overflow-hidden rounded-md border">
                       <Image
-                        src={category.image || '/images/placeholder.svg'}
-                        alt={category.name}
+                        src={category.imgthumbnail || '/images/placeholder.svg'}
+                        alt={category.category_name}
                         width={40}
                         height={40}
                         className="h-full w-full object-cover"
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {category.category_name}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {category.description.length > 60
                       ? `${category.description.substring(0, 60)}...`
@@ -277,14 +240,19 @@ export default function CategoriesPage() {
                   <TableCell className="hidden md:table-cell font-mono text-sm">
                     {category.slug}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  {/* <TableCell className="hidden md:table-cell">
                     {category.parent || '—'}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant="outline">{category.productsCount}</Badge>
+                  </TableCell> */}
+                  <TableCell className="hidden md:table-cell">
+                    {category.subcategories.length > 0
+                      ? 'Has Subcategories'
+                      : '—'}
                   </TableCell>
                   <TableCell className="text-center">
-                    {category.featured ? (
+                    {category.featured_category ? (
                       <Badge>Featured</Badge>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -301,22 +269,25 @@ export default function CategoriesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/categories/edit/${category.id}`}
+                            href={`/categories/edit/${category.category_id}`}
                             className="flex items-center"
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </Link>
                         </DropdownMenuItem>
-                        {/* <DropdownMenuItem asChild>
-                          <Link href={`/categories/${category.slug}`} className="flex items-center">
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={`/categories/${category.slug}`}
+                            className="flex items-center"
+                          >
                             <ChevronDown className="mr-2 h-4 w-4" />
                             View
                           </Link>
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDelete(category.id)}
+                          onClick={() => handleDelete(category.category_id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete

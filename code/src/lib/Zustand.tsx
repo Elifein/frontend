@@ -1,198 +1,242 @@
-// 'use client';
+'use client';
 
-// import { create } from 'zustand';
-// import jwt from 'jsonwebtoken';
+import { create } from 'zustand';
+import jwt from 'jsonwebtoken';
 
-// interface ThemeColors {
-//   topBarColor: string;
-//   sidebarColor: string;
-//   sidebarBackground: string;
-//   primary: string;
-//   primaryForeground: string;
-//   secondary: string;
-//   secondaryForeground: string;
-// }
+interface ThemeColors {
+  topBarColor: string;
+  sidebarColor: string;
+  sidebarBackground: string;
+  primary: string;
+  primaryForeground: string;
+  secondary: string;
+  secondaryForeground: string;
+}
 
-// interface AuthState {
-//   userId: string | null;
-//   role: string | null;
-//   exp: number | null;
-//   isAuthenticated: boolean;
-//   login: (token: string) => void;
-//   logout: () => void;
-//   checkAuth: () => void;
-// }
+interface JwtPayload {
+  userId: string;
+  role: string;
+  exp: number;
+}
 
-// interface FormState {
-//   formData: Record<string, any> | null;
-//   setFormData: (data: Record<string, any>) => void;
-//   resetFormData: () => void;
-// }
+interface AuthState {
+  userId: string | null;
+  role: string | null;
+  exp: number | null;
+  isAuthenticated: boolean;
+  login: (token: string) => void;
+  logout: () => void;
+  checkAuth: () => void;
+}
 
-// interface HealthFormState {
-//   healthFormData: Record<string, any> | null;
-//   setHealthFormData: (data: Record<string, any>) => void;
-//   resetHealthFormData: () => void;
-// }
+type FormData = Record<string, string | number | boolean | null>;
 
-// interface NotificationState {
-//   notifications: number;
-//   incrementNotifications: () => void;
-//   resetNotifications: () => void;
-// }
+interface FormState {
+  formData: FormData | null;
+  setFormData: (data: FormData) => void;
+  resetFormData: () => void;
+}
 
-// interface StoreState
-//   extends AuthState,
-//     FormState,
-//     HealthFormState,
-//     NotificationState {
-//   themeColors: ThemeColors;
-//   updateThemeColor: (colorType: keyof ThemeColors, colorValue: string) => void;
-//   resetTheme: () => void;
-// }
+interface NotificationState {
+  notifications: number;
+  incrementNotifications: () => void;
+  resetNotifications: () => void;
+}
 
-// const useStore = create<StoreState>((set) => ({
-//   // 🔹 Authentication State
-//   userId: null,
-//   role: null,
-//   exp: null,
-//   isAuthenticated: false,
+interface ValidationState {
+  validateName: (name: string) => { isValid: boolean; error?: string };
+  validateEmail: (email: string) => { isValid: boolean; error?: string };
+  validatePassword: (password: string) => { isValid: boolean; error?: string };
+}
 
-//   login: (token: string) => {
-//     console.log('Received token:', token);
+interface StoreState
+  extends AuthState,
+    FormState,
+    NotificationState,
+    ValidationState {
+  themeColors: ThemeColors;
+  updateThemeColor: (colorType: keyof ThemeColors, colorValue: string) => void;
+  resetTheme: () => void;
+}
 
-//     if (!token) {
-//       console.error('No token received');
-//       return;
-//     }
+const useStore = create<StoreState>((set) => ({
+  // 🔹 Authentication State
+  userId: null,
+  role: null,
+  exp: null,
+  isAuthenticated: false,
 
-//     try {
-//       const decoded: any = jwt.decode(token);
-//       console.log('Decoded token:', decoded);
+  login: (token: string) => {
+    console.log('Received token:', token);
+    if (!token) {
+      console.error('No token received');
+      return;
+    }
+    try {
+      const decoded = jwt.decode(token) as JwtPayload | null;
+      console.log('Decoded token:', decoded);
+      if (decoded && decoded.userId && decoded.role) {
+        set({
+          userId: decoded.userId,
+          role: decoded.role,
+          exp: decoded.exp,
+          isAuthenticated: true,
+        });
+        localStorage.setItem('token', token);
+      } else {
+        console.error('Invalid token format', decoded);
+      }
+    } catch (error) {
+      console.error('Token decoding error:', error);
+    }
+  },
 
-//       if (decoded && decoded.userId && decoded.role) {
-//         set({
-//           userId: decoded.userId,
-//           role: decoded.role,
-//           exp: decoded.exp,
-//           isAuthenticated: true,
-//         });
+  logout: () => {
+    set({
+      userId: null,
+      role: null,
+      exp: null,
+      isAuthenticated: false,
+    });
+    localStorage.removeItem('token');
+  },
 
-//         localStorage.setItem('token', token);
-//       } else {
-//         console.error('Invalid token format', decoded);
-//       }
-//     } catch (error) {
-//       console.error('Token decoding error:', error);
-//     }
-//   },
+  checkAuth: () => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwt.decode(token) as JwtPayload | null;
+        if (decoded && decoded.userId && decoded.role) {
+          set({
+            userId: decoded.userId,
+            role: decoded.role,
+            exp: decoded.exp,
+            isAuthenticated: true,
+          });
+        } else {
+          console.error('Invalid token format');
+          localStorage.removeItem('token');
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        localStorage.removeItem('token');
+      }
+    }
+  },
 
-//   logout: () => {
-//     set({
-//       userId: null,
-//       role: null,
-//       exp: null,
-//       isAuthenticated: false,
-//     });
-//     localStorage.removeItem('token');
-//   },
+  // 🔹 Theme Colors
+  themeColors: {
+    topBarColor: '',
+    sidebarColor: '',
+    sidebarBackground: '',
+    primary: '240 5.9% 10%',
+    primaryForeground: '0 0% 98%',
+    secondary: '240 4.8% 95.9%',
+    secondaryForeground: '240 5.9% 10%',
+  },
 
-//   checkAuth: () => {
-//     if (typeof window === 'undefined') return;
-//     const token =
-//       typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  updateThemeColor: (colorType, colorValue) =>
+    set((state) => ({
+      themeColors: {
+        ...state.themeColors,
+        [colorType]: colorValue,
+      },
+    })),
 
-//     if (token) {
-//       try {
-//         const decoded: any = jwt.decode(token);
-//         if (decoded && decoded.userId && decoded.role) {
-//           set({
-//             userId: decoded.userId,
-//             role: decoded.role,
-//             exp: decoded.exp,
-//             isAuthenticated: true,
-//           });
-//         } else {
-//           console.error('Invalid token format');
-//           localStorage.removeItem('token');
-//         }
-//       } catch (error) {
-//         console.error('Error decoding token:', error);
-//         localStorage.removeItem('token');
-//       }
-//     }
-//   },
+  resetTheme: () =>
+    set(() => ({
+      themeColors: {
+        topBarColor: '',
+        sidebarColor: '',
+        sidebarBackground: '',
+        primary: '240 5.9% 10%',
+        primaryForeground: '0 0% 98%',
+        secondary: '240 4.8% 95.9%',
+        secondaryForeground: '240 5.9% 10%',
+      },
+    })),
 
-//   // 🔹 Theme Colors
-//   themeColors: {
-//     topBarColor: '',
-//     sidebarColor: '',
-//     sidebarBackground: '',
-//     primary: '240 5.9% 10%',
-//     primaryForeground: '0 0% 98%',
-//     secondary: '240 4.8% 95.9%',
-//     secondaryForeground: '240 5.9% 10%',
-//   },
+  // 🔹 Form Data Management
+  formData: null,
+  setFormData: (data: FormData) =>
+    set((state) => ({
+      formData: state.formData ? { ...state.formData, ...data } : { ...data },
+    })),
+  resetFormData: () =>
+    set(() => ({
+      formData: null,
+    })),
 
-//   updateThemeColor: (colorType, colorValue) =>
-//     set((state) => ({
-//       themeColors: {
-//         ...state.themeColors,
-//         [colorType]: colorValue,
-//       },
-//     })),
+  // 🔹 Notifications
+  notifications: 0,
+  incrementNotifications: () =>
+    set((state) => {
+      const newCount = state.notifications + 1;
+      console.log('Incrementing notifications:', newCount);
+      return { notifications: newCount };
+    }),
 
-//   resetTheme: () =>
-//     set(() => ({
-//       themeColors: {
-//         topBarColor: '',
-//         sidebarColor: '',
-//         sidebarBackground: '',
-//         primary: '240 5.9% 10%',
-//         primaryForeground: '0 0% 98%',
-//         secondary: '240 4.8% 95.9%',
-//         secondaryForeground: '240 5.9% 10%',
-//       },
-//     })),
+  resetNotifications: () =>
+    set(() => {
+      console.log('Resetting notifications to 0');
+      return { notifications: 0 };
+    }),
 
-//   // 🔹 Form Data Management
-//   formData: null,
-//   setFormData: (data) =>
-//     set((state) => ({
-//       formData: { ...state.formData, ...data },
-//     })),
-//   resetFormData: () =>
-//     set(() => ({
-//       formData: null,
-//     })),
+  // 🔹 Validation Logic
+  validateName: (name: string) => {
+    if (!name) {
+      return { isValid: false, error: 'Name is required' };
+    }
+    if (name.length < 2) {
+      return { isValid: false, error: 'Name must be at least 2 characters' };
+    }
+    if (!/^[a-zA-Z\s-]+$/.test(name)) {
+      return {
+        isValid: false,
+        error: 'Name can only contain letters, spaces, or hyphens',
+      };
+    }
+    return { isValid: true };
+  },
 
-//   // 🔹 Health Form Data
-//   healthFormData: null,
-//   setHealthFormData: (data) =>
-//     set((state) => ({
-//       healthFormData: { ...state.healthFormData, ...data },
-//     })),
-//   resetHealthFormData: () =>
-//     set(() => ({
-//       healthFormData: null,
-//     })),
+  validateEmail: (email: string) => {
+    if (!email) {
+      return { isValid: false, error: 'Email is required' };
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { isValid: false, error: 'Invalid email format' };
+    }
+    return { isValid: true };
+  },
 
-//   // 🔹 Notifications
-//   notifications: 0,
-//   incrementNotifications: () =>
-//     set((state) => {
-//       const newCount = state.notifications + 1;
-//       console.log('Incrementing notifications:', newCount);
-//       return { notifications: newCount };
-//     }),
+  validatePassword: (password: string) => {
+    if (!password) {
+      return { isValid: false, error: 'Password is required' };
+    }
+    if (password.length < 8) {
+      return {
+        isValid: false,
+        error: 'Password must be at least 8 characters',
+      };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return {
+        isValid: false,
+        error: 'Password must contain at least one uppercase letter',
+      };
+    }
+    if (!/[0-9]/.test(password)) {
+      return {
+        isValid: false,
+        error: 'Password must contain at least one number',
+      };
+    }
+    return { isValid: true };
+  },
+}));
 
-//   resetNotifications: () =>
-//     set(() => {
-//       console.log('Resetting notifications to 0');
-//       return { notifications: 0 };
-//     }),
-// }));
+useStore.getState().checkAuth();
 
-// useStore.getState().checkAuth();
-
-// export default useStore;
+export default useStore;
