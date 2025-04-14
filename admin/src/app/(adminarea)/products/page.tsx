@@ -144,7 +144,6 @@ export default function ProductsPage() {
 
   const filteredProducts = products.filter((product: Product) => {
     const matchesSearch =
- Ascertainable =
       (product.identification?.product_name?.toLowerCase() || '').includes(
         searchQuery.toLowerCase()
       ) ||
@@ -371,9 +370,7 @@ export default function ProductsPage() {
                     {product.identification.product_sku}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {categories.find(
-                      (cat: Category) => cat.category_id === product.cat_id
-                    )?.category_name || product.cat_id}
+                    {categories.find((cat: Category) => cat.category_id === product.cat_id)?.category_name || product.cat_id}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     $
