@@ -160,17 +160,7 @@ export default function AddProductPage() {
     };
   }, [imagePreviews]);
 
-  // const handleInputChange = (
-  //   e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  //   section: keyof typeof formData
-  // ) => {
-  //   const { name, value } = e.target;
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [section]: { ...prev[section], [name]: value },
-  //   }));
-  // };
-
+ 
   type ObjectSectionKeys =
     | 'identification'
     | 'descriptions'
@@ -223,22 +213,7 @@ export default function AddProductPage() {
     }
   };
 
-  // const removeImage = (index: number) => {
-  //   const newPreviews = [...imagePreviews];
-  //   if (newPreviews[index]) {
-  //     URL.revokeObjectURL(newPreviews[index]); // Clean up object URL
-  //   }
-  //   newPreviews[index] = '';
-  //   setImagePreviews(newPreviews);
-
-  //   const newImages = [...formData.images];
-  //   newImages[index] = undefined as any; // Type workaround; could also filter out undefined later
-  //   setFormData((prev) => ({ ...prev, images: newImages.filter(Boolean) }));
-
-  //   const nextIndex = newPreviews.findIndex((img, i) => i !== index && img);
-  //   setActiveImageIndex(nextIndex >= 0 ? nextIndex : 0);
-  // };
-
+ 
   const removeImage = (index: number) => {
     const newPreviews = [...imagePreviews];
     if (newPreviews[index]) {
@@ -285,6 +260,7 @@ export default function AddProductPage() {
     }
   };
 
+  
   // const handleSubmit = async (e: React.FormEvent) => {
   //   e.preventDefault();
   //   setIsSubmitting(true);
@@ -293,18 +269,13 @@ export default function AddProductPage() {
   //   try {
   //     // Validate required fields
   //     if (!formData.identification.product_name || !formData.cat_id) {
-  //       throw new Error('Please fill in all required fields (Product Name, Category)');
+  //       throw new Error(
+  //         'Please fill in all required fields (Product Name, Category)'
+  //       );
   //     }
   //     if (!formData.images.length) {
   //       throw new Error('Please upload at least one product image');
   //     }
-
-  //     // Prepare tags
-  //     const tags = formData.tags_and_relationships.product_tags.length
-  //       ? formData.tags_and_relationships.product_tags
-  //       : formData.tags_and_relationships.product_tags[0]
-  //           .split(',')
-  //           .map((tag) => tag.trim());
 
   //     // Create FormData for multipart upload
   //     const formDataToSend = new FormData();
@@ -313,78 +284,50 @@ export default function AddProductPage() {
   //     formDataToSend.append('cat_id', formData.cat_id);
   //     formDataToSend.append('subcat_id', formData.subcat_id);
 
-  //     // Identification
-  //     formDataToSend.append('identification', formData.identification.product_name);
-  //     if (formData.identification.product_sku) {
-  //       formDataToSend.append('identification', formData.identification.product_sku);
-  //     }
-
-  //     // Descriptions
-  //     if (formData.descriptions.short_description) {
-  //       formDataToSend.append('descriptions', formData.descriptions.short_description);
-  //     }
-  //     if (formData.descriptions.full_description) {
-  //       formDataToSend.append('descriptions', formData.descriptions.full_description);
-  //     }
-
-  //     // Pricing
-  //     if (formData.pricing.actual_price) {
-  //       formDataToSend.append('pricing', formData.pricing.actual_price);
-  //     }
-  //     if (formData.pricing.selling_price) {
-  //       formDataToSend.append('pricing', formData.pricing.selling_price);
-  //     }
-
-  //     // Inventory
-  //     if (formData.inventory.stock_quantity) {
-  //       formDataToSend.append('inventory', formData.inventory.stock_quantity);
-  //     }
-  //     formDataToSend.append('inventory', formData.inventory.stock_alert_status);
-
-  //     // Physical Attributes
-  //     if (formData.physical_attributes.weight) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.weight);
-  //     }
-  //     if (formData.physical_attributes.dimensions.length) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.dimensions.length);
-  //     }
-  //     if (formData.physical_attributes.dimensions.width) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.dimensions.width);
-  //     }
-  //     if (formData.physical_attributes.dimensions.height) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.dimensions.height);
-  //     }
-  //     formDataToSend.append('physical_attributes', formData.physical_attributes.shipping_class);
+  //     // Nested fields as JSON strings
+  //     formDataToSend.append(
+  //       'identification',
+  //       JSON.stringify(formData.identification)
+  //     );
+  //     formDataToSend.append(
+  //       'descriptions',
+  //       JSON.stringify(formData.descriptions)
+  //     );
+  //     formDataToSend.append('pricing', JSON.stringify(formData.pricing));
+  //     formDataToSend.append('inventory', JSON.stringify(formData.inventory));
+  //     formDataToSend.append(
+  //       'physical_attributes',
+  //       JSON.stringify(formData.physical_attributes)
+  //     );
+  //     formDataToSend.append(
+  //       'tags_and_relationships',
+  //       JSON.stringify(formData.tags_and_relationships)
+  //     );
+  //     formDataToSend.append(
+  //       'status_flags',
+  //       JSON.stringify(formData.status_flags)
+  //     );
 
   //     // Images
   //     formData.images.forEach((file) => {
   //       formDataToSend.append('files', file);
   //     });
 
-  //     // Tags and Relationships
-  //     if (tags.length) {
-  //       formDataToSend.append('tags_and_relationships', tags.join(','));
-  //     }
-  //     if (formData.tags_and_relationships.linkedproductid) {
-  //       formDataToSend.append('tags_and_relationships', formData.tags_and_relationships.linkedproductid);
-  //     }
-
-  //     // Status Flags
-  //     formDataToSend.append('status_flags', String(formData.status_flags.featured_product));
-  //     formDataToSend.append('status_flags', String(formData.status_flags.published_product));
-  //     formDataToSend.append('status_flags', String(formData.status_flags.product_status));
-
-  //     const response = await axiosInstance.post('/create-product/', formDataToSend, {
-  //       headers: {
-  //         'Content-Type': 'multipart/form-data',
-  //       },
-  //     });
+  //     const response = await axiosInstance.post(
+  //       '/create-product/',
+  //       formDataToSend,
+  //       {
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       }
+  //     );
 
   //     if (response.status === 201) {
   //       setSuccess(true);
   //       setTimeout(() => router.push('/products'), 2000);
   //     }
-  //   } catch (err: any) {
+  //   } catch (err) {
   //     const errorMessage =
   //       err.response?.data?.message ||
   //       err.message ||
@@ -394,78 +337,61 @@ export default function AddProductPage() {
   //     setIsSubmitting(false);
   //   }
   // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-
+  
     try {
       // Validate required fields
       if (!formData.identification.product_name || !formData.cat_id) {
-        throw new Error(
-          'Please fill in all required fields (Product Name, Category)'
-        );
+        throw new Error('Please fill in all required fields (Product Name, Category)');
       }
       if (!formData.images.length) {
         throw new Error('Please upload at least one product image');
       }
-
+  
       // Create FormData for multipart upload
       const formDataToSend = new FormData();
-
-      // Top-level fields
       formDataToSend.append('cat_id', formData.cat_id);
       formDataToSend.append('subcat_id', formData.subcat_id);
-
-      // Nested fields as JSON strings
-      formDataToSend.append(
-        'identification',
-        JSON.stringify(formData.identification)
-      );
-      formDataToSend.append(
-        'descriptions',
-        JSON.stringify(formData.descriptions)
-      );
+      formDataToSend.append('identification', JSON.stringify(formData.identification));
+      formDataToSend.append('descriptions', JSON.stringify(formData.descriptions));
       formDataToSend.append('pricing', JSON.stringify(formData.pricing));
       formDataToSend.append('inventory', JSON.stringify(formData.inventory));
-      formDataToSend.append(
-        'physical_attributes',
-        JSON.stringify(formData.physical_attributes)
-      );
-      formDataToSend.append(
-        'tags_and_relationships',
-        JSON.stringify(formData.tags_and_relationships)
-      );
-      formDataToSend.append(
-        'status_flags',
-        JSON.stringify(formData.status_flags)
-      );
-
-      // Images
-      formData.images.forEach((file) => {
+      formDataToSend.append('physical_attributes', JSON.stringify(formData.physical_attributes));
+      formDataToSend.append('tags_and_relationships', JSON.stringify(formData.tags_and_relationships));
+      formDataToSend.append('status_flags', JSON.stringify(formData.status_flags));
+  
+      // Explicitly type 'file' as File
+      formData.images.forEach((file: File) => {
         formDataToSend.append('files', file);
       });
-
-      const response = await axiosInstance.post(
-        '/create-product/',
-        formDataToSend,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
+  
+      const response = await axiosInstance.post('/create-product/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
       if (response.status === 201) {
         setSuccess(true);
         setTimeout(() => router.push('/products'), 2000);
       }
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        'An error occurred while adding the product';
+      let errorMessage = 'An error occurred while adding the product';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+  
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
