@@ -21,18 +21,16 @@ jobs:
           ssh-keyscan -H ${{ secrets.DO_FRONTEND_IP }} >> ~/.ssh/known_hosts
 
       - name: Test SSH Connection
-        run: ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@${{ secrets.DO_FRONTEND_IP }} "echo 'Connected successfully!'"
+        run: ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@${{ secrets.DO_FRONTEND_IP }} "echo '✅ Connected successfully!'"
 
       - name: Add GitHub to Known Hosts
         run: ssh-keyscan github.com >> ~/.ssh/known_hosts
-      
-      - name: Create .env.production
-        run: echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" > .env.production
-        
 
       - name: Deploy application
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
         run: |
-          ssh -i ~/.ssh/github-actions root@${{ secrets.DO_FRONTEND_IP }} << EOF
+          ssh -i ~/.ssh/id_ed25519 root@${{ secrets.DO_FRONTEND_IP }} << EOF
             set -e
       
             mkdir -p /root/frontend
@@ -43,20 +41,19 @@ jobs:
             else
               git pull origin main
             fi
-      
-            echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" > .env.production
+
+            # 👇 Place .env.production AFTER pulling code
+            echo "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}" > .env.production
       
             if [ -f docker-compose.yml ]; then
               docker-compose down --volumes
               docker-compose rm -f
               docker system prune -af
               docker volume prune -f
-      
+
               docker-compose up --build -d
             else
               echo "❌ Error: docker-compose.yml not found!"
               exit 1
             fi
           EOF
-      
-      
