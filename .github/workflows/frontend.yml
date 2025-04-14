@@ -41,10 +41,15 @@ jobs:
             else
               git pull origin main
             fi
+            # After pulling the repo in SSH script
+            echo "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}" > code/.env.production
+            echo "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}" > admin/.env.production
+
 
             # 👇 Place .env.production AFTER pulling code
             echo "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}" > .env.production
-      
+
+          
             if [ -f docker-compose.yml ]; then
               docker-compose down --volumes
               docker-compose rm -f
