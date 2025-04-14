@@ -31,8 +31,6 @@ jobs:
         
 
       - name: Deploy application
-        env:
-          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
         run: |
           ssh -i ~/.ssh/github-actions root@${{ secrets.DO_FRONTEND_IP }} << EOF
             set -e
@@ -46,7 +44,7 @@ jobs:
               git pull origin main
             fi
       
-            echo "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}" > .env.production
+            echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" > .env.production
       
             if [ -f docker-compose.yml ]; then
               docker-compose down --volumes
@@ -60,4 +58,5 @@ jobs:
               exit 1
             fi
           EOF
+      
       
