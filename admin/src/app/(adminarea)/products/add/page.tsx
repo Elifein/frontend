@@ -223,9 +223,6 @@ export default function AddProductPage() {
     }
   };
 
-
-  // not sure exactly
-  
   // const removeImage = (index: number) => {
   //   const newPreviews = [...imagePreviews];
   //   if (newPreviews[index]) {
