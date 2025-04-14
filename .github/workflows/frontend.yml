@@ -25,6 +25,10 @@ jobs:
 
       - name: Add GitHub to Known Hosts
         run: ssh-keyscan github.com >> ~/.ssh/known_hosts
+      
+      - name: Create .env.production
+        run: echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" > .env.production
+        
 
       - name: Deploy application
         env:
