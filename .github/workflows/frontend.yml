@@ -61,7 +61,7 @@ jobs:
               # Rebuild and run both containers
               docker-compose up --build -d
             else
-              echo "❌ Error: docker-compose.yml not foun!"
+              echo "❌ Error: docker-compose.yml not found!"
               exit 1
             fi
           EOF
