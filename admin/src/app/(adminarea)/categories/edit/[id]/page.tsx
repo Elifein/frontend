@@ -33,7 +33,7 @@ import {
   DialogTrigger,
 } from '../../../../../components/ui/dialog';
 import axiosInstance from '../../../../../lib/axiosInstance';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
 type Props = {
   params: Promise<{ id: string }>;
