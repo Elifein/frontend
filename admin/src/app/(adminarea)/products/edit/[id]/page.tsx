@@ -2,10 +2,10 @@
 
 import type React from 'react';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Upload, Plus, Trash2, AlertCircle } from 'lucide-react';
 
 import { Button } from '../../../../../components/ui/button';
@@ -41,176 +41,205 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../../../../components/ui/dialog';
+import axiosInstance from '../../../../../lib/axiosInstance';
 
-// Sample categories for the dropdown
-const categories = [
-  { id: '1', name: 'Electronics' },
-  { id: '2', name: 'Smartphones', parentId: '1' },
-  { id: '3', name: 'Laptops', parentId: '1' },
-  { id: '4', name: 'Audio', parentId: '1' },
-  { id: '5', name: 'Clothing' },
-  { id: '6', name: 'Men', parentId: '5' },
-  { id: '7', name: 'Women', parentId: '5' },
-  { id: '8', name: 'Home & Kitchen' },
-  { id: '9', name: 'Beauty' },
-];
+interface Subcategory {
+  subcategory_id: string;
+  subcategory_name: string;
+  slug: string;
+  description: string;
+  meta_title: string;
+  meta_description: string;
+  imgthumbnail: string;
+  featured_category: boolean;
+  show_in_menu: boolean;
+  status: boolean;
+}
 
-// Sample products data - in a real app, this would be fetched from an API
-const products = [
-  {
-    id: '1',
-    name: 'Minimalist Desk Lamp',
-    sku: 'LAMP-001',
-    price: 49.99,
-    salePrice: '',
-    category: '8', // Home & Kitchen
-    description:
-      'A sleek, minimalist desk lamp perfect for any workspace. Features adjustable brightness levels and a modern design that complements any decor style.',
-    shortDescription: 'Modern desk lamp with adjustable brightness',
-    stock: 45,
-    weight: '1.2',
-    dimensions: {
-      length: '12',
-      width: '6',
-      height: '18',
-    },
-    featured: true,
-    published: true,
-    tags: 'lamp,desk,lighting,home office',
-    images: [
-      '/images/placeholder.svg?height=600&width=600',
-      '/images/placeholder.svg?height=600&width=600&text=Image+2',
-      '/images/placeholder.svg?height=600&width=600&text=Image+3',
-      '',
-      '',
-    ],
-  },
-  {
-    id: '2',
-    name: 'Leather Weekender Bag',
-    sku: 'BAG-002',
-    price: 129.99,
-    salePrice: '99.99',
-    category: '5', // Clothing
-    description:
-      'Premium leather weekender bag with ample storage for short trips. Features durable construction, multiple compartments, and a sleek design.',
-    shortDescription: 'Premium leather bag for weekend getaways',
-    stock: 12,
-    weight: '2.5',
-    dimensions: {
-      length: '22',
-      width: '12',
-      height: '10',
-    },
-    featured: false,
-    published: true,
-    tags: 'bag,leather,travel,weekender',
-    images: [
-      '/images/placeholder.svg?height=600&width=600',
-      '/images/placeholder.svg?height=600&width=600&text=Image+2',
-      '',
-      '',
-      '',
-    ],
-  },
-];
+interface Category {
+  category_id: string;
+  category_name: string;
+  slug: string;
+  description: string;
+  meta_title: string;
+  meta_description: string;
+  imgthumbnail: string;
+  featured_category: boolean;
+  show_in_menu: boolean;
+  status: boolean;
+  subcategories: Subcategory[];
+}
 
-export default function EditProductPage() {
-  const params = useParams();
-  const id = params?.id as string;
+// Combined type for dropdown options
+interface DropdownOption {
+  id: string; // category_id or subcategory_id
+  name: string;
+  isSubcategory: boolean;
+  parentId?: string;
+}
+
+type Props = {
+  params: Promise<{ id: string }>; // Update type to reflect params as a Promise
+};
+
+export default function EditProductPage({ params }: Props) {
+  const { id } = use(params);
+
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    sku: '',
-    price: '',
-    salePrice: '',
-    category: '',
-    description: '',
-    shortDescription: '',
-    stock: '',
-    weight: '',
-    dimensions: {
-      length: '',
-      width: '',
-      height: '',
+    cat_id: '',
+    subcat_id: '', // Will be set based on selected category/subcategory
+    identification: { product_name: '', product_sku: '' },
+    descriptions: { short_description: '', full_description: '' },
+    pricing: { actual_price: '', selling_price: '' },
+    inventory: { quantity: '', stock_alert_status: 'instock' },
+    physical_attributes: {
+      weight: '',
+      dimensions: { length: '', width: '', height: '' },
+      shipping_class: 'standard',
     },
-    featured: false,
-    published: true,
-    tags: '',
+    images: [] as File[],
+    tags_and_relationships: {
+      product_tags: [] as string[],
+      linkedproductid: '',
+    },
+    status_flags: {
+      featured_product: false,
+      published_product: true,
+      product_status: false,
+    },
   });
 
-  const [images, setImages] = useState<
-    { file: File | null; preview: string }[]
-  >([
-    { file: null, preview: '' },
-    { file: null, preview: '' },
-    { file: null, preview: '' },
-    { file: null, preview: '' },
-    { file: null, preview: '' },
+  const [imagePreviews, setImagePreviews] = useState<string[]>([
+    '',
+    '',
+    '',
+    '',
+    '',
   ]);
-
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [dropdownOptions, setDropdownOptions] = useState<DropdownOption[]>([]);
 
   // Fetch product data
   useEffect(() => {
-    // In a real app, you would fetch the product data from an API
-    // For this example, we'll use the sample data
-    const product = products.find((p) => p.id === id);
+    const fetchProduct = async () => {
+      try {
+        const response = await axiosInstance.get(`/products/${id}`);
+        const product = response.data;
 
-    if (product) {
-      setFormData({
-        name: product.name,
-        sku: product.sku,
-        price: product.price.toString(),
-        salePrice: product.salePrice.toString(),
-        category: product.category,
-        description: product.description,
-        shortDescription: product.shortDescription,
-        stock: product.stock.toString(),
-        weight: product.weight,
-        dimensions: product.dimensions,
-        featured: product.featured,
-        published: product.published,
-        tags: product.tags,
-      });
+        setFormData({
+          cat_id: product.cat_id || '',
+          subcat_id: product.subcat_id || '',
+          identification: product.identification || {
+            product_name: '',
+            product_sku: '',
+          },
+          descriptions: product.descriptions || {
+            short_description: '',
+            full_description: '',
+          },
+          pricing: product.pricing || { actual_price: '', selling_price: '' },
+          inventory: product.inventory || {
+            quantity: '',
+            stock_alert_status: 'instock',
+          },
+          physical_attributes: product.physical_attributes || {
+            weight: '',
+            dimensions: { length: '', width: '', height: '' },
+            shipping_class: 'standard',
+          },
+          images: [],
+          tags_and_relationships: product.tags_and_relationships || {
+            product_tags: [],
+            linkedproductid: '',
+          },
+          status_flags: product.status_flags || {
+            featured_product: false,
+            published_product: true,
+            product_status: false,
+          },
+        });
 
-      // Set images
-      const productImages = product.images.map((img) => ({
-        file: null,
-        preview: img,
-      }));
+        // Set image previews
+        const urls = product.images?.urls || [];
+        setImagePreviews(urls.concat(Array(5 - urls.length).fill('')));
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        setError('Failed to load product data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      setImages(productImages);
-    } else {
-      setError('Product not found');
-    }
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get('/get-categories/');
+        if (response.data?.status_code === 200 && response.data?.data) {
+          const categories: Category[] = response.data.data;
 
-    setIsLoading(false);
+          // Flatten categories and subcategories into a single dropdown list
+          const options: DropdownOption[] = [];
+          categories.forEach((category) => {
+            options.push({
+              id: category.category_id,
+              name: category.category_name,
+              isSubcategory: false,
+            });
+            category.subcategories.forEach((subcategory) => {
+              options.push({
+                id: subcategory.subcategory_id,
+                name: `— ${subcategory.subcategory_name}`,
+                isSubcategory: true,
+                parentId: category.category_id,
+              });
+            });
+          });
+          setDropdownOptions(options);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError(
+          'Failed to load categories and subcategories. Please try again.'
+        );
+      }
+    };
+
+    fetchProduct();
+    fetchCategories();
   }, [id]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    section: keyof typeof formData,
+    key: string
   ) => {
-    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [section]: {
+        ...prev[section],
+        [key]: e.target.value,
+      },
     }));
   };
 
   const handleDimensionChange = (dimension: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      dimensions: {
-        ...prev.dimensions,
-        [dimension]: value,
+      physical_attributes: {
+        ...prev.physical_attributes,
+        dimensions: {
+          ...prev.physical_attributes.dimensions,
+          [dimension]: value,
+        },
       },
     }));
   };
@@ -224,12 +253,13 @@ export default function EditProductPage() {
       const reader = new FileReader();
 
       reader.onload = (event) => {
-        const newImages = [...images];
-        newImages[index] = {
-          file,
-          preview: event.target?.result as string,
-        };
-        setImages(newImages);
+        const newImages = [...formData.images];
+        newImages[index] = file;
+        setFormData((prev) => ({ ...prev, images: newImages }));
+
+        const newPreviews = [...imagePreviews];
+        newPreviews[index] = event.target?.result as string;
+        setImagePreviews(newPreviews);
         setActiveImageIndex(index);
       };
 
@@ -238,12 +268,18 @@ export default function EditProductPage() {
   };
 
   const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages[index] = { file: null, preview: '' };
-    setImages(newImages);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const newImages = [...formData.images];
+    newImages[index] = undefined as File | undefined;
+    setFormData((prev) => ({ ...prev, images: newImages }));
 
-    // Set active image to the first available image
-    const nextIndex = images.findIndex((img, i) => i !== index && img.preview);
+    const newPreviews = [...imagePreviews];
+    newPreviews[index] = '';
+    setImagePreviews(newPreviews);
+
+    const nextIndex = newPreviews.findIndex(
+      (preview, i) => i !== index && preview
+    );
     setActiveImageIndex(nextIndex >= 0 ? nextIndex : 0);
   };
 
@@ -259,30 +295,63 @@ export default function EditProductPage() {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.price || !formData.category) {
+      if (
+        !formData.identification.product_name ||
+        !formData.pricing.actual_price
+      ) {
         throw new Error('Please fill in all required fields');
       }
 
-      // Check if at least one image is uploaded
-      if (!images.some((img) => img.preview)) {
-        throw new Error('Please upload at least one product image');
-      }
+      // Prepare FormData
+      const submitData = new FormData();
+      if (formData.cat_id) submitData.append('cat_id', formData.cat_id);
+      if (formData.subcat_id)
+        submitData.append('subcat_id', formData.subcat_id);
+      submitData.append(
+        'identification',
+        JSON.stringify(formData.identification)
+      );
+      submitData.append('descriptions', JSON.stringify(formData.descriptions));
+      submitData.append('pricing', JSON.stringify(formData.pricing));
+      submitData.append('inventory', JSON.stringify(formData.inventory));
+      submitData.append(
+        'physical_attributes',
+        JSON.stringify(formData.physical_attributes)
+      );
+      submitData.append(
+        'tags_and_relationships',
+        JSON.stringify(formData.tags_and_relationships)
+      );
+      submitData.append('status_flags', JSON.stringify(formData.status_flags));
 
-      // In a real app, you would upload images and submit form data to your API
-      // For this example, we'll simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Append images
+      formData.images.forEach((file) => {
+        if (file) {
+          submitData.append('files', file);
+        }
+      });
+
+      // Submit to backend
+      const response = await axiosInstance.put(`/products/${id}`, submitData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      // Update image previews with URLs from backend
+      const updatedProduct = response.data;
+      const newImageUrls = updatedProduct.images?.urls || [];
+      setImagePreviews(
+        newImageUrls.concat(Array(5 - newImageUrls.length).fill(''))
+      );
 
       setSuccess(true);
-
-      // Reset form after successful submission
       setTimeout(() => {
         router.push('/products');
       }, 2000);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'An error occurred while updating the product'
+        err.response?.data?.message ||
+          err.message ||
+          'An error occurred while updating the product'
       );
     } finally {
       setIsSubmitting(false);
@@ -291,16 +360,12 @@ export default function EditProductPage() {
 
   const handleDelete = async () => {
     setIsSubmitting(true);
-
     try {
-      // In a real app, you would call an API to delete the product
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Redirect to products page after successful deletion
+      await axiosInstance.delete(`/products/${id}`);
       router.push('/products');
-    } catch (error) {
-      console.error(error); // optional, good for debugging
-      setError('Failed to delete product');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete product');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -406,11 +471,11 @@ export default function EditProductPage() {
               <h2 className="text-lg font-medium mb-4">Product Images</h2>
               <div className="space-y-4">
                 <div className="aspect-square overflow-hidden rounded-md border bg-muted relative">
-                  {images[activeImageIndex]?.preview ? (
+                  {imagePreviews[activeImageIndex] ? (
                     <>
                       <Image
                         src={
-                          images[activeImageIndex].preview ||
+                          imagePreviews[activeImageIndex] ||
                           '/images/placeholder.svg'
                         }
                         alt="Product preview"
@@ -453,21 +518,21 @@ export default function EditProductPage() {
                 />
 
                 <div className="grid grid-cols-5 gap-2">
-                  {images.map((image, index) => (
+                  {imagePreviews.map((preview, index) => (
                     <div
                       key={index}
                       className={`aspect-square cursor-pointer overflow-hidden rounded-md border ${
                         index === activeImageIndex ? 'ring-2 ring-primary' : ''
-                      } ${image.preview ? 'bg-background' : 'bg-muted'}`}
+                      } ${preview ? 'bg-background' : 'bg-muted'}`}
                       onClick={() =>
-                        image.preview
+                        preview
                           ? setActiveImageIndex(index)
                           : triggerFileInput(index)
                       }
                     >
-                      {image.preview ? (
+                      {preview ? (
                         <Image
-                          src={image.preview || '/images/placeholder.svg'}
+                          src={preview || '/images/placeholder.svg'}
                           alt={`Product image ${index + 1}`}
                           width={80}
                           height={80}
@@ -493,9 +558,15 @@ export default function EditProductPage() {
                   <Label htmlFor="published">Published</Label>
                   <Switch
                     id="published"
-                    checked={formData.published}
+                    checked={formData.status_flags.published_product}
                     onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, published: checked }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        status_flags: {
+                          ...prev.status_flags,
+                          published_product: checked,
+                        },
+                      }))
                     }
                   />
                 </div>
@@ -504,9 +575,15 @@ export default function EditProductPage() {
                   <Label htmlFor="featured">Featured Product</Label>
                   <Switch
                     id="featured"
-                    checked={formData.featured}
+                    checked={formData.status_flags.featured_product}
                     onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, featured: checked }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        status_flags: {
+                          ...prev.status_flags,
+                          featured_product: checked,
+                        },
+                      }))
                     }
                   />
                 </div>
@@ -534,39 +611,49 @@ export default function EditProductPage() {
                   <TabsContent value="basic" className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="name">
+                        <Label htmlFor="product_name">
                           Product Name <span className="text-red-500">*</span>
                         </Label>
                         <Input
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
+                          id="product_name"
+                          value={formData.identification.product_name}
+                          onChange={(e) =>
+                            handleInputChange(
+                              e,
+                              'identification',
+                              'product_name'
+                            )
+                          }
                           placeholder="Enter product name"
                           required
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="sku">SKU</Label>
+                        <Label htmlFor="product_sku">SKU</Label>
                         <Input
-                          id="sku"
-                          name="sku"
-                          value={formData.sku}
-                          onChange={handleInputChange}
+                          id="product_sku"
+                          value={formData.identification.product_sku}
+                          onChange={(e) =>
+                            handleInputChange(
+                              e,
+                              'identification',
+                              'product_sku'
+                            )
+                          }
                           placeholder="Enter product SKU"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="category">
+                      <Label htmlFor="cat_id">
                         Category <span className="text-red-500">*</span>
                       </Label>
                       <Select
-                        value={formData.category}
+                        value={formData.cat_id}
                         onValueChange={(value) =>
-                          setFormData((prev) => ({ ...prev, category: value }))
+                          setFormData((prev) => ({ ...prev, cat_id: value }))
                         }
                         required
                       >
@@ -574,13 +661,42 @@ export default function EditProductPage() {
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.parentId
-                                ? `— ${category.name}`
-                                : category.name}
-                            </SelectItem>
-                          ))}
+                          {dropdownOptions
+                            .filter((cat) => !cat.isSubcategory)
+                            .map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subcat_id">Subcategory</Label>
+                      <Select
+                        value={formData.subcat_id}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({ ...prev, subcat_id: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a subcategory" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions
+                            .filter(
+                              (cat) =>
+                                cat.isSubcategory &&
+                                cat.parentId === formData.cat_id
+                            )
+                            .map((subcategory) => (
+                              <SelectItem
+                                key={subcategory.id}
+                                value={subcategory.id}
+                              >
+                                {subcategory.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -588,10 +704,22 @@ export default function EditProductPage() {
                     <div className="space-y-2">
                       <Label htmlFor="tags">Tags</Label>
                       <Input
-                        id="tags"
-                        name="tags"
-                        value={formData.tags}
-                        onChange={handleInputChange}
+                        id="product_tags"
+                        value={formData.tags_and_relationships.product_tags.join(
+                          ', '
+                        )}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            tags_and_relationships: {
+                              ...prev.tags_and_relationships,
+                              product_tags: e.target.value
+                                .split(',')
+                                .map((tag) => tag.trim())
+                                .filter(Boolean),
+                            },
+                          }))
+                        }
                         placeholder="Enter tags separated by commas"
                       />
                       <p className="text-sm text-muted-foreground">
@@ -600,17 +728,21 @@ export default function EditProductPage() {
                       </p>
                     </div>
                   </TabsContent>
-
                   <TabsContent value="description" className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="shortDescription">
+                      <Label htmlFor="short_description">
                         Short Description
                       </Label>
                       <Textarea
-                        id="shortDescription"
-                        name="shortDescription"
-                        value={formData.shortDescription}
-                        onChange={handleInputChange}
+                        id="short_description"
+                        value={formData.descriptions.short_description}
+                        onChange={(e) =>
+                          handleInputChange(
+                            e,
+                            'descriptions',
+                            'short_description'
+                          )
+                        }
                         placeholder="Enter a brief description (displayed in product cards)"
                         rows={3}
                       />
@@ -623,8 +755,14 @@ export default function EditProductPage() {
                       <Textarea
                         id="description"
                         name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
+                        value={formData.descriptions.full_description}
+                        onChange={(e) =>
+                          handleInputChange(
+                            e,
+                            'descriptions',
+                            'full_description'
+                          )
+                        }
                         placeholder="Enter detailed product description"
                         rows={8}
                         required
@@ -635,7 +773,7 @@ export default function EditProductPage() {
                   <TabsContent value="pricing" className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="price">
+                        <Label htmlFor="actual_price">
                           Regular Price <span className="text-red-500">*</span>
                         </Label>
                         <div className="relative">
@@ -643,34 +781,35 @@ export default function EditProductPage() {
                             $
                           </span>
                           <Input
-                            id="price"
-                            name="price"
+                            id="actual_price"
                             type="number"
                             step="0.01"
                             min="0"
-                            value={formData.price}
-                            onChange={handleInputChange}
+                            value={formData.pricing.actual_price}
+                            onChange={(e) =>
+                              handleInputChange(e, 'pricing', 'actual_price')
+                            }
                             className="pl-7"
                             placeholder="0.00"
-                            required
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="salePrice">Sale Price</Label>
+                        <Label htmlFor="selling_price">Sale Price</Label>
                         <div className="relative">
                           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                             $
                           </span>
                           <Input
-                            id="salePrice"
-                            name="salePrice"
+                            id="selling_price"
                             type="number"
                             step="0.01"
                             min="0"
-                            value={formData.salePrice}
-                            onChange={handleInputChange}
+                            value={formData.pricing.selling_price}
+                            onChange={(e) =>
+                              handleInputChange(e, 'pricing', 'selling_price')
+                            }
                             className="pl-7"
                             placeholder="0.00"
                           />
@@ -684,21 +823,33 @@ export default function EditProductPage() {
 
                   <TabsContent value="inventory" className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="stock">Stock Quantity</Label>
+                      <Label htmlFor="quantity">Stock Quantity</Label>
                       <Input
-                        id="stock"
-                        name="stock"
+                        id="quantity"
                         type="number"
                         min="0"
-                        value={formData.stock}
-                        onChange={handleInputChange}
+                        value={formData.inventory.quantity}
+                        onChange={(e) =>
+                          handleInputChange(e, 'inventory', 'quantity')
+                        }
                         placeholder="Enter stock quantity"
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label>Stock Status</Label>
-                      <Select defaultValue="instock">
+                      <Select
+                        value={formData.inventory.stock_alert_status}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            inventory: {
+                              ...prev.inventory,
+                              stock_alert_status: value,
+                            },
+                          }))
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select stock status" />
                         </SelectTrigger>
@@ -724,8 +875,10 @@ export default function EditProductPage() {
                         type="number"
                         step="0.01"
                         min="0"
-                        value={formData.weight}
-                        onChange={handleInputChange}
+                        value={formData.physical_attributes.weight}
+                        onChange={(e) =>
+                          handleInputChange(e, 'physical_attributes', 'weight')
+                        }
                         placeholder="Enter product weight"
                       />
                     </div>
@@ -739,7 +892,9 @@ export default function EditProductPage() {
                             type="number"
                             step="0.1"
                             min="0"
-                            value={formData.dimensions.length}
+                            value={
+                              formData.physical_attributes.dimensions.length
+                            }
                             onChange={(e) =>
                               handleDimensionChange('length', e.target.value)
                             }
@@ -751,7 +906,9 @@ export default function EditProductPage() {
                             type="number"
                             step="0.1"
                             min="0"
-                            value={formData.dimensions.width}
+                            value={
+                              formData.physical_attributes.dimensions.width
+                            }
                             onChange={(e) =>
                               handleDimensionChange('width', e.target.value)
                             }
@@ -763,7 +920,9 @@ export default function EditProductPage() {
                             type="number"
                             step="0.1"
                             min="0"
-                            value={formData.dimensions.height}
+                            value={
+                              formData.physical_attributes.dimensions.height
+                            }
                             onChange={(e) =>
                               handleDimensionChange('height', e.target.value)
                             }
@@ -774,7 +933,18 @@ export default function EditProductPage() {
 
                     <div className="space-y-2">
                       <Label>Shipping Class</Label>
-                      <Select defaultValue="standard">
+                      <Select
+                        value={formData.physical_attributes.shipping_class}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            physical_attributes: {
+                              ...prev.physical_attributes,
+                              shipping_class: value,
+                            },
+                          }))
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select shipping class" />
                         </SelectTrigger>

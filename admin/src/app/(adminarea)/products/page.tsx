@@ -39,7 +39,6 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import axiosInstance from '../../../lib/axiosInstance';
-import { AxiosError } from 'axios';
 
 interface Product {
   product_id: string;
@@ -91,13 +90,16 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await axiosInstance.get('/products/');
+        // Handle successful response
         if (response.status === 200) {
+          // Check if response.data is an array (direct product list) or APIResponse
           if (Array.isArray(response.data)) {
             setProducts(response.data);
           } else if (response.data?.status_code === 404) {
@@ -109,13 +111,10 @@ export default function ProductsPage() {
         }
       } catch (error) {
         console.error('Error fetching products:', error);
-        let errorMessage = 'Failed to load products. Please try again.';
-        if (error instanceof AxiosError) {
-          errorMessage = error.response?.data?.message || error.message || errorMessage;
-        } else if (error instanceof Error) {
-          errorMessage = error.message;
-        }
-        setError(errorMessage);
+        setError(
+          error.response?.data?.message ||
+            'Failed to load products. Please try again.'
+        );
         setProducts([]);
       }
     };
@@ -128,13 +127,7 @@ export default function ProductsPage() {
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
-        let errorMessage = 'Failed to load parent categories. Please try again.';
-        if (error instanceof AxiosError) {
-          errorMessage = error.response?.data?.message || error.message || errorMessage;
-        } else if (error instanceof Error) {
-          errorMessage = error.message;
-        }
-        setError(errorMessage);
+        setError('Failed to load parent categories. Please try again.');
       }
     };
 
@@ -142,7 +135,8 @@ export default function ProductsPage() {
     fetchCategories();
   }, []);
 
-  const filteredProducts = products.filter((product: Product) => {
+  const filteredProducts = products.filter((product) => {
+    // Search filter
     const matchesSearch =
       (product.identification?.product_name?.toLowerCase() || '').includes(
         searchQuery.toLowerCase()
@@ -151,22 +145,26 @@ export default function ProductsPage() {
         searchQuery.toLowerCase()
       );
 
+    // Category filter
     const matchesCategory =
       categoryFilter === 'all' ||
       product.cat_id.toLowerCase() === categoryFilter.toLowerCase();
 
+    // Status filter
     const matchesStatus =
       statusFilter === 'all' ||
-      (statusFilter === 'published' && product.status_flags.published_product) ||
-      (statusFilter === 'unpublished' && !product.status_flags.published_product);
+      (statusFilter === 'published' &&
+        product.status_flags.published_product) ||
+      (statusFilter === 'unpublished' &&
+        !product.status_flags.published_product);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const toggleProductSelection = (productId: string) => {
-    setSelectedProducts((prev: string[]) =>
+    setSelectedProducts((prev) =>
       prev.includes(productId)
-        ? prev.filter((id: string) => id !== productId)
+        ? prev.filter((id) => id !== productId)
         : [...prev, productId]
     );
   };
@@ -176,16 +174,18 @@ export default function ProductsPage() {
       setSelectedProducts([]);
     } else {
       setSelectedProducts(
-        filteredProducts.map((product: Product) => product.product_id)
+        filteredProducts.map((product) => product.product_id)
       );
     }
   };
 
   const handleDelete = (productId: string) => {
+    // In a real app, you would call an API to delete the product
     alert(`Delete product ${productId}`);
   };
 
   const handleBulkDelete = () => {
+    // In a real app, you would call an API to delete multiple products
     alert(`Delete products: ${selectedProducts.join(', ')}`);
     setSelectedProducts([]);
   };
@@ -231,7 +231,7 @@ export default function ProductsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category: Category) => (
+            {categories.map((category) => (
               <SelectItem
                 key={category.category_id}
                 value={category.category_id}
@@ -259,7 +259,9 @@ export default function ProductsPage() {
           <span className="sr-only">More filters</span>
         </Button>
 
-        {(categoryFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
+        {(categoryFilter !== 'all' ||
+          statusFilter !== 'all' ||
+          searchQuery) && (
           <Button
             variant="ghost"
             size="sm"
@@ -332,7 +334,7 @@ export default function ProductsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProducts.map((product: Product) => (
+              filteredProducts.map((product) => (
                 <TableRow key={product.product_id}>
                   <TableCell>
                     <Checkbox
@@ -370,7 +372,9 @@ export default function ProductsPage() {
                     {product.identification.product_sku}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {categories.find((cat: Category) => cat.category_id === product.cat_id)?.category_name || product.cat_id}
+                    {categories.find(
+                      (cat) => cat.category_id === product.cat_id
+                    )?.category_name || product.cat_id}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     $
@@ -388,7 +392,8 @@ export default function ProductsPage() {
                       variant={
                         product.inventory?.stock_alert_status === 'instock'
                           ? 'default'
-                          : product.inventory?.stock_alert_status === 'backorder'
+                          : product.inventory?.stock_alert_status ===
+                              'backorder'
                             ? 'secondary'
                             : 'destructive'
                       }
@@ -410,16 +415,14 @@ export default function ProductsPage() {
                             href={`/products/edit/${product.product_id}`}
                             className="flex items-center"
                           >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                            <Edit className="mr-2 h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
                           onClick={() => handleDelete(product.product_id)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -1,13 +1,10 @@
 'use client';
 
-import type React from 'react';
-
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Upload, Trash2, AlertCircle } from 'lucide-react';
-
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
 import { Textarea } from '../../../../../components/ui/textarea';
@@ -35,50 +32,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../../../../components/ui/dialog';
+import axiosInstance from '../../../../../lib/axiosInstance';
 
-// Sample parent categories for the dropdown
-const parentCategories = [
-  { id: '1', name: 'Electronics' },
-  { id: '5', name: 'Clothing' },
-  { id: '8', name: 'Home & Kitchen' },
-  { id: '9', name: 'Beauty' },
-];
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
-// Sample categories data - in a real app, this would be fetched from an API
-const categories = [
-  {
-    id: '1',
-    name: 'Electronics',
-    slug: 'electronics',
-    description: 'Electronic devices and gadgets',
-    image: '/images/placeholder.svg?height=400&width=400',
-    productsCount: 42,
-    featured: true,
-    showInMenu: true,
-    parent: null,
-    metaTitle: 'Electronics - Shop the latest devices',
-    metaDescription:
-      'Browse our collection of electronic devices including smartphones, laptops, and audio equipment.',
-  },
-  {
-    id: '5',
-    name: 'Clothing',
-    slug: 'clothing',
-    description: 'Apparel and fashion items',
-    image: '/images/placeholder.svg?height=400&width=400',
-    productsCount: 36,
-    featured: true,
-    showInMenu: true,
-    parent: null,
-    metaTitle: 'Clothing - Fashion for everyone',
-    metaDescription:
-      'Discover our latest clothing collections for men, women, and children.',
-  },
-];
-
-export default function EditCategoryPage() {
-  const params = useParams();
-  const id = params?.id as string;
+export default function EditCategoryPage({ params }: Props) {
+  const { id } = use(params);
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,13 +47,13 @@ export default function EditCategoryPage() {
     name: '',
     slug: '',
     description: '',
-    parentCategory: '',
+    parent: '',
     featured: false,
-    showInMenu: true,
-    metaTitle: '',
-    metaDescription: '',
+    show_in_menu: true,
+    meta_title: '',
+    meta_description: '',
+    status: false,
   });
-
   const [image, setImage] = useState<{ file: File | null; preview: string }>({
     file: null,
     preview: '',
@@ -102,35 +63,63 @@ export default function EditCategoryPage() {
   const [success, setSuccess] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [parentCategories, setParentCategories] = useState([]);
 
-  // Fetch category data
   useEffect(() => {
-    // In a real app, you would fetch the category data from an API
-    // For this example, we'll use the sample data
-    const category = categories.find((c) => c.id === id);
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get(`/get-categories/${id}`);
+        const data = response.data.data;
+        const category = data.category || data.subcategory;
 
-    if (category) {
-      setFormData({
-        name: category.name,
-        slug: category.slug,
-        description: category.description,
-        parentCategory: category.parent || '',
-        featured: category.featured,
-        showInMenu: category.showInMenu,
-        metaTitle: category.metaTitle,
-        metaDescription: category.metaDescription,
-      });
+        if (category) {
+          setFormData({
+            name: category.cat_name || category.subcat_name || '',
+            slug: category.cat_slug || category.subcat_slug || '',
+            description:
+              category.cat_description || category.subcat_description || '',
+            parent: category.cat_ref_id || '',
+            featured:
+              category.cat_featured_category ||
+              category.subcat_featured_category ||
+              false,
+            show_in_menu:
+              category.cat_show_in_menu || category.subcat_show_in_menu || true,
+            meta_title:
+              category.cat_meta_title || category.subcat_meta_title || '',
+            meta_description:
+              category.cat_meta_description ||
+              category.subcat_meta_description ||
+              '',
+            status: category.cat_status || category.subcat_status || false,
+          });
+          setImage({
+            file: null,
+            preview:
+              category.cat_imgthumbnail || category.subcat_imgthumbnail || '',
+          });
+        } else {
+          setError('Category not found');
+        }
+      } catch (err) {
+        setError('Failed to load category data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      // Set image
-      setImage({
-        file: null,
-        preview: category.image,
-      });
-    } else {
-      setError('Category not found');
-    }
+    const fetchParentCategories = async () => {
+      try {
+        const response = await axiosInstance.get('/get-categories');
+        setParentCategories(response.data.data || []);
+      } catch (err) {
+        console.error('Failed to load parent categories:', err);
+      }
+    };
 
-    setIsLoading(false);
+    fetchCategories();
+    fetchParentCategories();
   }, [id]);
 
   const handleInputChange = (
@@ -142,7 +131,6 @@ export default function EditCategoryPage() {
       [name]: value,
     }));
 
-    // Auto-generate slug from name if slug is empty or matches the previous name-based slug
     if (name === 'name') {
       const newSlug = value
         .toLowerCase()
@@ -194,27 +182,53 @@ export default function EditCategoryPage() {
     setError('');
 
     try {
-      // Validate required fields
       if (!formData.name) {
         throw new Error('Category name is required');
       }
 
-      // In a real app, you would upload image and submit form data to your API
-      // For this example, we'll simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('slug', formData.slug);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('meta_title', formData.meta_title);
+      formDataToSend.append('meta_description', formData.meta_description);
+      formDataToSend.append('featured', String(formData.featured));
+      formDataToSend.append('show_in_menu', String(formData.show_in_menu));
+      formDataToSend.append('status', String(formData.status));
+      if (formData.parent && formData.parent !== 'none') {
+        formDataToSend.append('parent', formData.parent); // Changed from cat_ref_id
+      }
+      if (image.file) {
+        // Validate file
+        if (!image.file.type.startsWith('image/')) {
+          throw new Error('Only image files are allowed');
+        }
+        if (image.file.size > 2 * 1024 * 1024) {
+          throw new Error('File size exceeds 2MB limit');
+        }
+        formDataToSend.append('file', image.file);
+      }
+      if (!image.preview && !image.file) {
+        formDataToSend.append('remove_image', 'true');
+      }
+
+      // Log FormData for debugging
+      console.log('Sending FormData:', Object.fromEntries(formDataToSend));
+
+      await axiosInstance.put(`/update-categories/${id}`, formDataToSend);
 
       setSuccess(true);
-
-      // Reset form after successful submission
+      console.log('edit categories succeess');
       setTimeout(() => {
         router.push('/categories');
       }, 2000);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'An error occurred while updating the category'
-      );
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.message ||
+        'An error occurred while updating the category';
+      setError(errorMessage);
+      console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -224,14 +238,12 @@ export default function EditCategoryPage() {
     setIsSubmitting(true);
 
     try {
-      // In a real app, you would call an API to delete the category
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Redirect to categories page after successful deletion
+      await axiosInstance.delete(`/delete-category/${id}`);
+      setIsDeleteDialogOpen(false);
       router.push('/categories');
     } catch (error) {
-      console.error(error); // optional, good for debugging
       setError('Failed to delete category');
+      console.error(error);
       setIsSubmitting(false);
     }
   };
@@ -256,7 +268,7 @@ export default function EditCategoryPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" asChild>
-            <Link href="/admin/categories">
+            <Link href="/categories">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -330,7 +342,6 @@ export default function EditCategoryPage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Category Image Section */}
         <div className="md:col-span-1">
           <Card>
             <CardContent className="p-6">
@@ -399,12 +410,15 @@ export default function EditCategoryPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="showInMenu">Show in Menu</Label>
+                  <Label htmlFor="show_in_menu">Show in Menu</Label>
                   <Switch
-                    id="showInMenu"
-                    checked={formData.showInMenu}
+                    id="show_in_menu"
+                    checked={formData.show_in_menu}
                     onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, showInMenu: checked }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        show_in_menu: checked,
+                      }))
                     }
                   />
                 </div>
@@ -413,7 +427,6 @@ export default function EditCategoryPage() {
           </Card>
         </div>
 
-        {/* Category Details Form */}
         <div className="md:col-span-2">
           <form id="category-form" onSubmit={handleSubmit}>
             <Card>
@@ -443,20 +456,20 @@ export default function EditCategoryPage() {
                       placeholder="enter-category-slug"
                     />
                     <p className="text-sm text-muted-foreground">
-                      The `&quot;`slug`&quot;` is the URL-friendly version of
-                      the name. It is usually all lowercase and contains only
-                      letters, numbers, and hyphens.
+                      The {"'slug'"} is the URL-friendly version of the name. It
+                      is usually all lowercase and contains only letters,
+                      numbers, and hyphens.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentCategory">Parent Category</Label>
+                    <Label htmlFor="parent">Parent Category</Label>
                     <Select
-                      value={formData.parentCategory}
+                      value={formData.parent || 'none'}
                       onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
-                          parentCategory: value,
+                          parent: value === 'none' ? '' : value,
                         }))
                       }
                     >
@@ -468,8 +481,11 @@ export default function EditCategoryPage() {
                           None (top level category)
                         </SelectItem>
                         {parentCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
+                          <SelectItem
+                            key={category.cat_id}
+                            value={category.cat_id}
+                          >
+                            {category.cat_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -501,24 +517,24 @@ export default function EditCategoryPage() {
 
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="metaTitle">Meta Title</Label>
+                        <Label htmlFor="meta_title">Meta Title</Label>
                         <Input
-                          id="metaTitle"
-                          name="metaTitle"
-                          value={formData.metaTitle}
+                          id="meta_title"
+                          name="meta_title"
+                          value={formData.meta_title}
                           onChange={handleInputChange}
                           placeholder="Enter meta title"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="metaDescription">
+                        <Label htmlFor="meta_description">
                           Meta Description
                         </Label>
                         <Textarea
-                          id="metaDescription"
-                          name="metaDescription"
-                          value={formData.metaDescription}
+                          id="meta_description"
+                          name="meta_description"
+                          value={formData.meta_description}
                           onChange={handleInputChange}
                           placeholder="Enter meta description"
                           rows={3}

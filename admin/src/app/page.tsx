@@ -1,13 +1,67 @@
+'use client';
+
 import Logo from '../components/logo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import Link from 'next/link';
+import axiosInstance from '../lib/axiosInstance';
+import { useState, FormEvent } from 'react';
+import useStore from '../lib/Zustand';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const { login } = useStore();
+  const router = useRouter();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { validateEmail, validatePassword } = useStore();
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setErrors({});
+
+    const emailValidation = validateEmail(email);
+    const passwordValidation = validatePassword(password);
+
+    const newErrors: Record<string, string> = {};
+    if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.error!;
+    }
+    if (!passwordValidation.isValid) {
+      newErrors.password = passwordValidation.error!;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post('/login/', {
+        email,
+        password,
+      });
+
+      if (response.status === 200) {
+        const { token } = response.data.data;
+        login(token);
+        router.push('/dashboard');
+      }
+
+      console.log('Login successful:', response.data);
+    } catch {
+      setErrors({ general: 'Something went wrong. Please try again.' });
+    }
+  };
   return (
     <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
       <form
+        onSubmit={handleLogin}
         action=""
         className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
       >
@@ -17,7 +71,7 @@ export default function LoginPage() {
               <Logo />
             </Link>
             <h1 className="mb-1 mt-4 text-xl font-semibold">
-              Sign In to Desi S-mart
+              Sign In to Elife
             </h1>
             <p className="text-sm">Welcome back! Sign in to continue</p>
           </div>
@@ -27,7 +81,17 @@ export default function LoginPage() {
               <Label htmlFor="email" className="block text-sm">
                 Username
               </Label>
-              <Input type="email" required name="email" id="email" />
+              <Input
+                type="email"
+                required
+                name="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-0.5">
@@ -41,11 +105,17 @@ export default function LoginPage() {
                 required
                 name="pwd"
                 id="pwd"
-                className="input sz-md variant-mixed"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
+              {errors.password && (
+                <p className="text-red-500 text-xs">{errors.password}</p>
+              )}
             </div>
 
-            <Button className="w-full">Sign In</Button>
+            <Button className="w-full" type="submit">
+              Sign In
+            </Button>
           </div>
         </div>
       </form>

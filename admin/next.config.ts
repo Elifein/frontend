@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   env: {
     PORT: '3001', // must be a string
   },
+  images: {
+    domains: ['blr1.digitaloceanspaces.com'],
+  },
 };
 
 export default nextConfig;
