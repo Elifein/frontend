@@ -103,7 +103,7 @@ export default function EditProductPage({ params }: Props) {
 
   const [formData, setFormData] = useState({
     cat_id: '',
-    subcat_id: '', // Will be set based on selected category/subcategory
+    subcat_id: '',
     identification: { product_name: '', product_sku: '' },
     descriptions: { short_description: '', full_description: '' },
     pricing: { actual_price: '', selling_price: '' },
@@ -113,7 +113,7 @@ export default function EditProductPage({ params }: Props) {
       dimensions: { length: '', width: '', height: '' },
       shipping_class: 'standard',
     },
-    images: [] as File[],
+    images: [] as (File | undefined)[],
     tags_and_relationships: {
       product_tags: [] as string[],
       linkedproductid: '',
