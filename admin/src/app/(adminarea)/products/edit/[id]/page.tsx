@@ -44,6 +44,18 @@ import {
 import axiosInstance from '../../../../../lib/axiosInstance';
 import axios from 'axios';
 
+
+type ObjectSectionKeys =
+  | 'identification'
+  | 'descriptions'
+  | 'pricing'
+  | 'inventory'
+  | 'physical_attributes'
+  | 'tags_and_relationships'
+  | 'status_flags';
+
+
+
 interface Subcategory {
   subcategory_id: string;
   subcategory_name: string;
@@ -218,19 +230,19 @@ export default function EditProductPage({ params }: Props) {
     fetchCategories();
   }, [id]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    section: keyof typeof formData,
-    key: string
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: e.target.value,
-      },
-    }));
-  };
+const handleInputChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  section: ObjectSectionKeys,
+  key: string
+) => {
+  setFormData((prev) => ({
+    ...prev,
+    [section]: {
+      ...prev[section],
+      [key]: e.target.value,
+    },
+  }));
+};
 
   const handleDimensionChange = (dimension: string, value: string) => {
     setFormData((prev) => ({
