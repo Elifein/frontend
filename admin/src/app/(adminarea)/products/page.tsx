@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import axiosInstance from '../../../lib/axiosInstance';
+import axios from 'axios';
 
 interface Product {
   product_id: string;
@@ -109,15 +110,25 @@ export default function ProductsPage() {
             throw new Error('Unexpected response format');
           }
         }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setError(
-          error.response?.data?.message ||
-            'Failed to load products. Please try again.'
-        );
-        setProducts([]);
       }
-    };
+      catch (err: unknown) {
+        let errorMessage = 'An error occurred while updating the category';
+      
+        if (axios.isAxiosError(err)) {
+          errorMessage = err.response?.data?.detail || err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+      
+        setError(errorMessage);
+        setProducts([]);
+        console.error('Update error:', err);
+      }
+    }; 
+      
+      
+      
+    
 
     const fetchCategories = async () => {
       try {

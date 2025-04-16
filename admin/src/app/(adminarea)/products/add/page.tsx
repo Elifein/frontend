@@ -33,6 +33,7 @@ import {
   AlertTitle,
 } from '../../../../components/ui/alert';
 import axiosInstance from '../../../../lib/axiosInstance';
+import axios from 'axios';
 
 // Type definitions based on your API response
 interface Subcategory {
@@ -461,12 +462,17 @@ export default function AddProductPage() {
         setSuccess(true);
         setTimeout(() => router.push('/products'), 2000);
       }
-    } catch (err) {
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        'An error occurred while adding the product';
+    } catch (err: unknown) {
+      let errorMessage = 'An error occurred while updating the category';
+    
+      if (axios.isAxiosError(err)) {
+        errorMessage = err.response?.data?.detail || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+    
       setError(errorMessage);
+      console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
     }

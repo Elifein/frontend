@@ -42,6 +42,7 @@ import {
   DialogTrigger,
 } from '../../../../../components/ui/dialog';
 import axiosInstance from '../../../../../lib/axiosInstance';
+import axios from 'axios';
 
 interface Subcategory {
   subcategory_id: string;
@@ -347,12 +348,17 @@ export default function EditProductPage({ params }: Props) {
       setTimeout(() => {
         router.push('/products');
       }, 2000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          'An error occurred while updating the product'
-      );
+    }catch (err: unknown) {
+      let errorMessage = 'An error occurred while updating the category';
+    
+      if (axios.isAxiosError(err)) {
+        errorMessage = err.response?.data?.detail || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+    
+      setError(errorMessage);
+      console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -363,8 +369,17 @@ export default function EditProductPage({ params }: Props) {
     try {
       await axiosInstance.delete(`/products/${id}`);
       router.push('/products');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete product');
+    } catch (err: unknown) {
+      let errorMessage = 'An error occurred while updating the category';
+    
+      if (axios.isAxiosError(err)) {
+        errorMessage = err.response?.data?.detail || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+    
+      setError(errorMessage);
+      console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
     }

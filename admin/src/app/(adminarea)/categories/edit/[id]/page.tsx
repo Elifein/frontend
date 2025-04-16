@@ -33,10 +33,26 @@ import {
   DialogTrigger,
 } from '../../../../../components/ui/dialog';
 import axiosInstance from '../../../../../lib/axiosInstance';
+import axios, { AxiosError } from 'axios';
 
 type Props = {
   params: Promise<{ id: string }>;
 };
+
+interface Category {
+  cat_id: string;
+  cat_description: string;
+  cat_slug: string;
+  cat_name: string;
+  cat_meta_title: string;
+  cat_meta_description: string;
+  cat_imgthumbnail: string;
+  cat_featured_category: boolean;
+  cat_show_in_menu: boolean;
+  cat_status: boolean;
+}
+
+
 
 export default function EditCategoryPage({ params }: Props) {
   const { id } = use(params);
@@ -63,7 +79,7 @@ export default function EditCategoryPage({ params }: Props) {
   const [success, setSuccess] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [parentCategories, setParentCategories] = useState([]);
+  const [parentCategories, setParentCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -111,7 +127,7 @@ export default function EditCategoryPage({ params }: Props) {
 
     const fetchParentCategories = async () => {
       try {
-        const response = await axiosInstance.get('/get-categories');
+        const response = await axiosInstance.get<{ data: Category[] }>('/get-categories');
         setParentCategories(response.data.data || []);
       } catch (err) {
         console.error('Failed to load parent categories:', err);
@@ -222,11 +238,15 @@ export default function EditCategoryPage({ params }: Props) {
       setTimeout(() => {
         router.push('/categories');
       }, 2000);
-    } catch (err) {
-      const errorMessage =
-        err.response?.data?.detail ||
-        err.message ||
-        'An error occurred while updating the category';
+    }catch (err: unknown) {
+      let errorMessage = 'An error occurred while updating the category';
+    
+      if (axios.isAxiosError(err)) {
+        errorMessage = err.response?.data?.detail || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+    
       setError(errorMessage);
       console.error('Update error:', err);
     } finally {
