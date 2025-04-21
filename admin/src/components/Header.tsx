@@ -13,6 +13,8 @@ import {
 import { Button } from '../components/ui/button';
 import { Menu, X, Search, Bell, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
+import useStore from '../lib/Zustand';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -20,6 +22,20 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
+  const { logout } = useStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      logout();
+      router.push('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+
+
   return (
     <header className="border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
@@ -77,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

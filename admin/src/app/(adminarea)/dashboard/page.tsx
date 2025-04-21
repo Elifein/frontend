@@ -97,10 +97,10 @@ export default function AdminDashboard() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           <div className="mb-8 flex items-center justify-between">
             <h1 className="text-2xl font-bold">Dashboard</h1>
-            <Button>
+            {/* <Button>
               <Plus className="mr-2 h-4 w-4" />
               Add Product
-            </Button>
+            </Button> */}
           </div>
 
           {/* Stats cards */}

@@ -679,7 +679,9 @@ export default function AddProductPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="product_sku">SKU</Label>
+                        <Label htmlFor="product_sku">SKU
+                          <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           id="product_sku"
                           name="product_sku"
@@ -688,6 +690,7 @@ export default function AddProductPage() {
                             handleInputChange(e, 'identification')
                           }
                           placeholder="Enter product SKU"
+                          required
                         />
                       </div>
                     </div>

@@ -4,7 +4,7 @@ import React from 'react';
 const Logo: React.FC = () => {
   return (
     <Image
-      src="/images/Desismart_Logo.png"
+      src="/images/elifein-logo.png"
       alt="Logo"
       width={100}
       height={100}

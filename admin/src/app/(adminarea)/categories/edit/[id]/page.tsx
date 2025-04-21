@@ -335,7 +335,7 @@ export default function EditCategoryPage({ params }: Props) {
           </Dialog>
 
           <Button variant="outline" asChild>
-            <Link href="/admin/categories">Cancel</Link>
+            <Link href="/categories">Cancel</Link>
           </Button>
           <Button type="submit" form="category-form" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : 'Save Changes'}

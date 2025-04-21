@@ -37,11 +37,6 @@ interface FormState {
   resetFormData: () => void;
 }
 
-interface NotificationState {
-  notifications: number;
-  incrementNotifications: () => void;
-  resetNotifications: () => void;
-}
 
 interface ValidationState {
   validateName: (name: string) => { isValid: boolean; error?: string };
@@ -52,7 +47,7 @@ interface ValidationState {
 interface StoreState
   extends AuthState,
     FormState,
-    NotificationState,
+
     ValidationState {
   themeColors: ThemeColors;
   updateThemeColor: (colorType: keyof ThemeColors, colorValue: string) => void;
@@ -168,20 +163,7 @@ const useStore = create<StoreState>((set) => ({
       formData: null,
     })),
 
-  // 🔹 Notifications
-  notifications: 0,
-  incrementNotifications: () =>
-    set((state) => {
-      const newCount = state.notifications + 1;
-      console.log('Incrementing notifications:', newCount);
-      return { notifications: newCount };
-    }),
 
-  resetNotifications: () =>
-    set(() => {
-      console.log('Resetting notifications to 0');
-      return { notifications: 0 };
-    }),
 
   // 🔹 Validation Logic
   validateName: (name: string) => {
