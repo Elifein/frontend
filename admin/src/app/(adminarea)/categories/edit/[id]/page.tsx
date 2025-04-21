@@ -1367,18 +1367,16 @@ export default function EditCategoryPage({ params }: Props) {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-
+  
     try {
       if (!formData.name) {
         throw new Error('Category name is required');
       }
-
-      // Log initial formData state for debugging
+  
       console.log('FormData state before submission:', formData);
-
+  
       const formDataToSend = new FormData();
-
-      // Use backend-expected field names (no 'cat_' prefix)
+  
       formDataToSend.append('name', formData.name);
       formDataToSend.append('slug', formData.slug);
       formDataToSend.append('description', formData.description || '');
@@ -1387,15 +1385,13 @@ export default function EditCategoryPage({ params }: Props) {
       formDataToSend.append('featured', formData.featured ? 'true' : 'false');
       formDataToSend.append('show_in_menu', formData.show_in_menu ? 'true' : 'false');
       formDataToSend.append('status', formData.status ? 'true' : 'false');
-
-      // Handle parent field
+  
       if (formData.parent && formData.parent !== 'none') {
         formDataToSend.append('parent', formData.parent);
       } else {
         formDataToSend.append('parent', 'none');
       }
-
-      // Image handling
+  
       if (image.file) {
         if (!image.file.type.startsWith('image/')) {
           throw new Error('Only image files are allowed');
@@ -1405,22 +1401,21 @@ export default function EditCategoryPage({ params }: Props) {
         }
         formDataToSend.append('file', image.file);
       }
-
-      // Log FormData contents for debugging
-      const formDataObj: Record<string, any> = {};
+  
+      // Define the type for formDataObj values
+      const formDataObj: Record<string, string | File | null> = {};
       formDataToSend.forEach((value, key) => {
         formDataObj[key] = value instanceof File ? value.name : value;
       });
       console.log('FormData contents:', formDataObj);
-
-      // Send the request
+  
       const response = await axiosInstance.put(`/update-categories/${id}`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       console.log('API Response:', response.data);
-
+  
       setSuccess(true);
       console.log('Edit categories success');
       setTimeout(() => {

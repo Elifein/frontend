@@ -744,7 +744,6 @@
 // }
 
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -759,7 +758,6 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
-  Eye,
 } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -790,12 +788,42 @@ import {
 } from '../../../components/ui/dialog';
 import axiosInstance from '../../../lib/axiosInstance';
 
-// Define interfaces
+// Define interfaces for raw API response
+interface RawSubcategory {
+  subcategory_id: string;
+  subcategory_name: string;
+  slug: string;
+  description: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  imgthumbnail: string | null;
+  featured_category: boolean;
+  show_in_menu: boolean;
+  status: boolean;
+  productsCount?: number;
+}
+
+interface RawCategory {
+  category_id: string;
+  category_name: string;
+  slug: string;
+  description: string | null;
+  imgthumbnail: string | null;
+  featured_category: boolean;
+  productsCount?: number;
+  subcategories: RawSubcategory[];
+}
+
+interface ApiResponse {
+  data: RawCategory[];
+}
+
+// Define interfaces for transformed data
 interface Subcategory {
   subcategory_id: string;
   subcategory_name: string;
   slug: string;
-  description: string | null; // Allow null
+  description: string | null;
   meta_title: string | null;
   meta_description: string | null;
   imgthumbnail: string | null;
@@ -811,7 +839,7 @@ interface Category {
   category_id: string;
   category_name: string;
   slug: string;
-  description: string | null; // Allow null
+  description: string | null;
   imgthumbnail: string | null;
   featured_category: boolean;
   subcategories: Subcategory[];
@@ -836,23 +864,23 @@ export default function CategoriesPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axiosInstance.get('/get-categories/');
+        const response = await axiosInstance.get<ApiResponse>('/get-categories/');
         if (response.data?.data) {
-          const transformedCategories = response.data.data.map((category: any) => ({
+          const transformedCategories: Category[] = response.data.data.map((category: RawCategory) => ({
             category_id: category.category_id,
             category_name: category.category_name,
             slug: category.slug,
-            description: category.description ?? null, // Handle null/undefined
+            description: category.description ?? null,
             imgthumbnail: category.imgthumbnail ?? null,
             featured_category: category.featured_category ?? false,
             parentId: null,
             level: 0,
             productsCount: category.productsCount ?? 0,
-            subcategories: category.subcategories.map((sub: any) => ({
+            subcategories: category.subcategories.map((sub: RawSubcategory) => ({
               subcategory_id: sub.subcategory_id,
               subcategory_name: sub.subcategory_name,
               slug: sub.slug,
-              description: sub.description ?? null, // Handle null/undefined
+              description: sub.description ?? null,
               meta_title: sub.meta_title ?? null,
               meta_description: sub.meta_description ?? null,
               imgthumbnail: sub.imgthumbnail ?? null,
@@ -1144,12 +1172,6 @@ export default function CategoriesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            {/* <Link href={`/categories/view/${id}`} className="flex items-center">
-                              <Eye className="mr-2 h-4 w-4" />
-                              View
-                            </Link> */}
-                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/categories/edit/${id}`} className="flex items-center">
                               <Edit className="mr-2 h-4 w-4" />
