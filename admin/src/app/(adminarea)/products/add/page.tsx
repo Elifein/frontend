@@ -286,115 +286,6 @@ export default function AddProductPage() {
     }
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-  //   setError('');
-
-  //   try {
-  //     // Validate required fields
-  //     if (!formData.identification.product_name || !formData.cat_id) {
-  //       throw new Error('Please fill in all required fields (Product Name, Category)');
-  //     }
-  //     if (!formData.images.length) {
-  //       throw new Error('Please upload at least one product image');
-  //     }
-
-  //     // Prepare tags
-  //     const tags = formData.tags_and_relationships.product_tags.length
-  //       ? formData.tags_and_relationships.product_tags
-  //       : formData.tags_and_relationships.product_tags[0]
-  //           .split(',')
-  //           .map((tag) => tag.trim());
-
-  //     // Create FormData for multipart upload
-  //     const formDataToSend = new FormData();
-
-  //     // Top-level fields
-  //     formDataToSend.append('cat_id', formData.cat_id);
-  //     formDataToSend.append('subcat_id', formData.subcat_id);
-
-  //     // Identification
-  //     formDataToSend.append('identification', formData.identification.product_name);
-  //     if (formData.identification.product_sku) {
-  //       formDataToSend.append('identification', formData.identification.product_sku);
-  //     }
-
-  //     // Descriptions
-  //     if (formData.descriptions.short_description) {
-  //       formDataToSend.append('descriptions', formData.descriptions.short_description);
-  //     }
-  //     if (formData.descriptions.full_description) {
-  //       formDataToSend.append('descriptions', formData.descriptions.full_description);
-  //     }
-
-  //     // Pricing
-  //     if (formData.pricing.actual_price) {
-  //       formDataToSend.append('pricing', formData.pricing.actual_price);
-  //     }
-  //     if (formData.pricing.selling_price) {
-  //       formDataToSend.append('pricing', formData.pricing.selling_price);
-  //     }
-
-  //     // Inventory
-  //     if (formData.inventory.stock_quantity) {
-  //       formDataToSend.append('inventory', formData.inventory.stock_quantity);
-  //     }
-  //     formDataToSend.append('inventory', formData.inventory.stock_alert_status);
-
-  //     // Physical Attributes
-  //     if (formData.physical_attributes.weight) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.weight);
-  //     }
-  //     if (formData.physical_attributes.dimensions.length) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.dimensions.length);
-  //     }
-  //     if (formData.physical_attributes.dimensions.width) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.dimensions.width);
-  //     }
-  //     if (formData.physical_attributes.dimensions.height) {
-  //       formDataToSend.append('physical_attributes', formData.physical_attributes.dimensions.height);
-  //     }
-  //     formDataToSend.append('physical_attributes', formData.physical_attributes.shipping_class);
-
-  //     // Images
-  //     formData.images.forEach((file) => {
-  //       formDataToSend.append('files', file);
-  //     });
-
-  //     // Tags and Relationships
-  //     if (tags.length) {
-  //       formDataToSend.append('tags_and_relationships', tags.join(','));
-  //     }
-  //     if (formData.tags_and_relationships.linkedproductid) {
-  //       formDataToSend.append('tags_and_relationships', formData.tags_and_relationships.linkedproductid);
-  //     }
-
-  //     // Status Flags
-  //     formDataToSend.append('status_flags', String(formData.status_flags.featured_product));
-  //     formDataToSend.append('status_flags', String(formData.status_flags.published_product));
-  //     formDataToSend.append('status_flags', String(formData.status_flags.product_status));
-
-  //     const response = await axiosInstance.post('/create-product/', formDataToSend, {
-  //       headers: {
-  //         'Content-Type': 'multipart/form-data',
-  //       },
-  //     });
-
-  //     if (response.status === 201) {
-  //       setSuccess(true);
-  //       setTimeout(() => router.push('/products'), 2000);
-  //     }
-  //   } catch (err: any) {
-  //     const errorMessage =
-  //       err.response?.data?.message ||
-  //       err.message ||
-  //       'An error occurred while adding the product';
-  //     setError(errorMessage);
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -443,9 +334,9 @@ export default function AddProductPage() {
         JSON.stringify(formData.status_flags)
       );
 
-      // Images
-      formData.images.forEach((file) => {
-        formDataToSend.append('files', file);
+      formData.images.forEach((file, index) => {
+        console.log(`Appending file ${index}:`, file.name);
+        formDataToSend.append('files[]', file); // Use `files[]` to indicate a list
       });
 
       const response = await axiosInstance.post(
