@@ -1145,10 +1145,10 @@ export default function CategoriesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/categories/view/${id}`} className="flex items-center">
+                            {/* <Link href={`/categories/view/${id}`} className="flex items-center">
                               <Eye className="mr-2 h-4 w-4" />
                               View
-                            </Link>
+                            </Link> */}
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/categories/edit/${id}`} className="flex items-center">
