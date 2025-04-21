@@ -43,7 +43,7 @@ const SidebarAdmin: React.FC<SidebarAdminProps> = ({
         }`}
       >
         <div className="flex h-16 shrink-0 items-center border-b px-6">
-          <Link href="/admin" className="flex items-center gap-2 font-semibold">
+          <Link href="/admin" className="flex items-center gap-2 font-semibold w-12">
             <Logo />
           </Link>
         </div>
@@ -74,12 +74,12 @@ const SidebarAdmin: React.FC<SidebarAdminProps> = ({
             })}
           </nav>
         </div>
-        <div className="border-t p-4">
+        {/* <div className="border-t p-4">
           <Button variant="outline" className="w-full justify-start" size="sm">
             <LogOut className="mr-2 h-4 w-4" />
             Log out
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Mobile backdrop */}
