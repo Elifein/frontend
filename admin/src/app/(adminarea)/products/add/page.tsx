@@ -334,11 +334,12 @@ export default function AddProductPage() {
         JSON.stringify(formData.status_flags)
       );
 
-      formData.images.forEach((file, index) => {
-        console.log(`Appending file ${index}:`, file.name);
-        formDataToSend.append('files[]', file); // Use `files[]` to indicate a list
-      });
 
+      formData.images.forEach((file) => {
+        if (file) {
+          formDataToSend.append('files', file);
+        }
+      });
       const response = await axiosInstance.post(
         '/create-product/',
         formDataToSend,
