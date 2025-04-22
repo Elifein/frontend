@@ -8,14 +8,15 @@ import {
   type ReactNode,
 } from 'react';
 
-interface Product {
+export interface Product {
   id: string;
   name: string;
   price: number;
   image: string;
+  quantity: number;
   category: string;
-  quantity?: number;
 }
+
 
 interface CartItem extends Product {
   quantity: number;

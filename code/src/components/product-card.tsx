@@ -69,7 +69,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
         <div className="flex items-center justify-between">
-          <span className="font-semibold">${product.price.toFixed(2)}</span>
+          <span className="font-semibold">₹{product.price.toFixed(2)}</span>
         </div>
         <div className="mt-3 flex items-center gap-2">
           <div className="flex items-center border rounded-md">
