@@ -21,7 +21,6 @@ import {
   TableRow,
 } from '../../../components/ui/table';
 import { Badge } from '../../../components/ui/badge';
-import withAuth from '../../../lib/withAuth';
 
 // Sample data for the dashboard
 const recentOrders = [
@@ -89,7 +88,7 @@ const stats = [
   },
 ];
 
-function AdminDashboard() {
+export default function AdminDashboard() {
   return (
     <div className="flex h-screen bg-muted/40">
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -195,8 +194,4 @@ function AdminDashboard() {
   );
 }
 
-export default withAuth(AdminDashboard, {
-  requireAuth: true,
-  allowedRoles: ['role_3'],
-});
 
