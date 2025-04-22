@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   ArrowUpDown,
   Filter,
+  Eye,
 } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -40,6 +41,7 @@ import {
 } from '../../../components/ui/select';
 import axiosInstance from '../../../lib/axiosInstance';
 import axios from 'axios';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/src/components/ui/dialog';
 
 interface Product {
   product_id: string;
@@ -91,6 +93,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
 
   const [error, setError] = useState('');
 
@@ -190,16 +193,38 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = (productId: string) => {
-    // In a real app, you would call an API to delete the product
-    alert(`Delete product ${productId}`);
+  const handleDelete = async (productId: string) => {
+    try {
+      await axiosInstance.put(`products/${productId}/delete`);
+      setProducts((prev) => prev.filter((p) => p.product_id !== productId));
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      alert('Failed to delete the product. Please try again.');
+    }
   };
+  
+  
 
-  const handleBulkDelete = () => {
-    // In a real app, you would call an API to delete multiple products
-    alert(`Delete products: ${selectedProducts.join(', ')}`);
-    setSelectedProducts([]);
+  const handleBulkDelete = async () => {
+    if (!confirm('Are you sure you want to delete the selected products?')) return;
+  
+    try {
+      await Promise.all(
+        selectedProducts.map((id) =>
+          axiosInstance.put(`products/${id}/delete`)
+        )
+      );
+      setProducts((prev) =>
+        prev.filter((p) => !selectedProducts.includes(p.product_id))
+      );
+      setSelectedProducts([]);
+    } catch (err) {
+      console.error('Error deleting products:', err);
+      alert('Some products could not be deleted. Please try again.');
+    }
   };
+  
+  
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -421,6 +446,12 @@ export default function ProductsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                             <Link href={`/products/view/${product.product_id}`} className="flex items-center">
+                               <Eye className="mr-2 h-4 w-4" />
+                               View
+                             </Link>
+                          </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link
                             href={`/products/edit/${product.product_id}`}
@@ -431,10 +462,12 @@ export default function ProductsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDelete(product.product_id)}
+                          onClick={() => setDeleteProductId(product.product_id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
+                        
+
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -443,6 +476,33 @@ export default function ProductsPage() {
             )}
           </TableBody>
         </Table>
+        <Dialog open={!!deleteProductId} onOpenChange={() => setDeleteProductId(null)}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you sure?</DialogTitle>
+      <DialogDescription>
+        This action cannot be undone. It will permanently delete this product from your inventory.
+      </DialogDescription>
+    </DialogHeader>
+    <DialogFooter>
+      <Button variant="outline" onClick={() => setDeleteProductId(null)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={async () => {
+          if (deleteProductId) {
+            await handleDelete(deleteProductId);
+            setDeleteProductId(null);
+          }
+        }}
+      >
+        Delete
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
       </div>
 
       <div className="mt-4 flex items-center justify-between">

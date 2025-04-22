@@ -9,8 +9,8 @@ import FooterSection from '../components/footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Desismart E-commerce Application',
-  description: 'Your friendly Indian E-commerce Store in UK',
+  title: 'Elifein Ecommerce Store',
+  description: 'Your friendly  E-commerce Store',
 };
 
 export default function RootLayout({

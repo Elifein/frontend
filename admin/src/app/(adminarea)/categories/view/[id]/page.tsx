@@ -527,12 +527,298 @@
 //     </div>
 //   )
 // }
-import React from 'react'
+'use client'
+import React, { useEffect, use } from 'react';
+import axiosInstance from '../../../../../lib/axiosInstance';
+import { Label } from '@/src/components/ui/label';
+import { Card, CardContent } from '@/src/components/ui/card';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/src/components/ui/button';
+import Image from 'next/image';
+import Link from 'next/link';
 
-const ViewPage = () => {
-  return (
-    <div>ViewPage</div>
-  )
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+interface BaseCategory {
+  cat_id: string;
+  cat_description: string | null;
+  cat_slug: string;
+  cat_name: string;
+  cat_meta_title: string | null;
+  cat_meta_description: string | null;
+  cat_imgthumbnail: string | null;
+  cat_featured_category: boolean;
+  cat_show_in_menu: boolean;
+  cat_status: boolean;
+  cat_ref_id?: string;
 }
 
-export default ViewPage
+interface Subcategory {
+  subcat_id: string;
+  subcat_description: string | null;
+  subcat_slug: string;
+  subcat_name: string;
+  subcat_meta_title: string | null;
+  subcat_meta_description: string | null;
+  subcat_imgthumbnail: string | null;
+  subcat_featured_category: boolean;
+  subcat_show_in_menu: boolean;
+  subcat_status: boolean;
+  subcat_ref_id?: string;
+}
+
+type CategoryData = BaseCategory | Subcategory;
+
+export default function ViewCategoryPage({ params }: Props) {
+  const { id } = use(params);
+  const [category, setCategory] = React.useState<CategoryData | null>(null);
+  const [error, setError] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [parentCategory, setParentCategory] = React.useState<BaseCategory | null>(null);
+
+  // Helper function to check if object is a Subcategory
+  const isSubcategory = (obj: CategoryData): obj is Subcategory => {
+    return 'subcat_name' in obj;
+  };
+
+  // Helper functions to safely access category fields
+  const getCategoryName = (cat: CategoryData): string => {
+    return isSubcategory(cat) ? cat.subcat_name : cat.cat_name;
+  };
+
+  const getCategorySlug = (cat: CategoryData): string => {
+    return isSubcategory(cat) ? cat.subcat_slug : cat.cat_slug;
+  };
+
+  const getCategoryDescription = (cat: CategoryData): string | null => {
+    return isSubcategory(cat) ? cat.subcat_description : cat.cat_description;
+  };
+
+  const getCategoryMetaTitle = (cat: CategoryData): string | null => {
+    return isSubcategory(cat) ? cat.subcat_meta_title : cat.cat_meta_title;
+  };
+
+  const getCategoryMetaDescription = (cat: CategoryData): string | null => {
+    return isSubcategory(cat) ? cat.subcat_meta_description : cat.cat_meta_description;
+  };
+
+  const getCategoryImage = (cat: CategoryData): string | null => {
+    return isSubcategory(cat) ? cat.subcat_imgthumbnail : cat.cat_imgthumbnail;
+  };
+
+  const getCategoryFeatured = (cat: CategoryData): boolean => {
+    return isSubcategory(cat) ? cat.subcat_featured_category : cat.cat_featured_category;
+  };
+
+  const getCategoryShowInMenu = (cat: CategoryData): boolean => {
+    return isSubcategory(cat) ? cat.subcat_show_in_menu : cat.cat_show_in_menu;
+  };
+
+  const getCategoryStatus = (cat: CategoryData): boolean => {
+    return isSubcategory(cat) ? cat.subcat_status : cat.cat_status;
+  };
+
+  const getCategoryRefId = (cat: CategoryData): string | undefined => {
+    return isSubcategory(cat) ? cat.subcat_ref_id : cat.cat_ref_id;
+  };
+
+  useEffect(() => {
+    const fetchCategoryData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get(`/get-categories/${id}`);
+        const data = response.data.data;
+        const categoryData = data.category || data.subcategory;
+        
+        if (categoryData) {
+          setCategory(categoryData);
+          
+          // If there's a parent category, fetch its details
+          const parentId = isSubcategory(categoryData) 
+            ? categoryData.subcat_ref_id 
+            : categoryData.cat_ref_id;
+            
+          if (parentId) {
+            try {
+              const parentResponse = await axiosInstance.get(`/get-categories/${parentId}`);
+              const parentData = parentResponse.data.data.category;
+              if (parentData) {
+                setParentCategory(parentData);
+              }
+            } catch (err) {
+              console.error('Failed to load parent category:', err);
+            }
+          }
+        } else {
+          setError('Category not found');
+        }
+      } catch (err) {
+        setError('Failed to load category data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategoryData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <p>Loading category information...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="bg-red-50 p-4 rounded-md border border-red-200">
+          <p className="text-red-700">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!category) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <p>No category data found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/categories">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">View Category</h1>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-1">
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-medium mb-4">Category Image</h2>
+              <div className="space-y-4">
+                <div className="aspect-square overflow-hidden rounded-md border bg-muted relative">
+                  {getCategoryImage(category) ? (
+                    <Image
+                      src={getCategoryImage(category) || '/images/placeholder.svg'}
+                      alt="Category image"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-center">
+                      <p className="text-sm text-muted-foreground">No image available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="p-6">
+              <h2 className="text-lg font-medium mb-4">Category Settings</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Featured Category</Label>
+                  <span className={`px-2 py-1 rounded-md text-xs ${getCategoryFeatured(category) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {getCategoryFeatured(category) ? 'Yes' : 'No'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label>Show in Menu</Label>
+                  <span className={`px-2 py-1 rounded-md text-xs ${getCategoryShowInMenu(category) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {getCategoryShowInMenu(category) ? 'Yes' : 'No'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label>Status</Label>
+                  <span className={`px-2 py-1 rounded-md text-xs ${getCategoryStatus(category) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {getCategoryStatus(category) ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="md:col-span-2">
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Category Name</Label>
+                  <p className="mt-1 font-medium">{getCategoryName(category)}</p>
+                </div>
+
+                <div>
+                  <Label className="text-sm text-muted-foreground">Slug</Label>
+                  <p className="mt-1">{getCategorySlug(category)}</p>
+                </div>
+
+                {parentCategory && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Parent Category</Label>
+                    <p className="mt-1">{parentCategory.cat_name}</p>
+                  </div>
+                )}
+
+                <div>
+                  <Label className="text-sm text-muted-foreground">Description</Label>
+                  <div className="mt-1 prose max-w-none text-gray-700">
+                    {getCategoryDescription(category) ? (
+                      <div>{getCategoryDescription(category)}</div>
+                    ) : (
+                      <p className="text-gray-500 italic">No description provided</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <h3 className="text-base font-medium mb-4">SEO Settings</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Meta Title</Label>
+                      <p className="mt-1">
+                        {getCategoryMetaTitle(category) || (
+                          <span className="text-gray-500 italic">No meta title provided</span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Meta Description</Label>
+                      <div className="mt-1">
+                        {getCategoryMetaDescription(category) ? (
+                          <p>{getCategoryMetaDescription(category)}</p>
+                        ) : (
+                          <p className="text-gray-500 italic">No meta description provided</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

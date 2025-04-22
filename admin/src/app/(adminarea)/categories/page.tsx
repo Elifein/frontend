@@ -758,6 +758,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
+  Eye,
 } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -972,8 +973,11 @@ export default function CategoriesPage() {
           const isSubcategory = allCategories.some(
             (cat) => 'subcategory_id' in cat && cat.subcategory_id === id
           );
-          const endpoint = isSubcategory ? `/delete-subcategory/${id}` : `/delete-category/${id}`;
-          await axiosInstance.delete(endpoint);
+          const endpoint = isSubcategory
+          ? `subcategory/${id}/delete`
+          : `category/${id}/delete`;
+
+          await axiosInstance.put(endpoint);
         })
       );
 
@@ -1003,6 +1007,7 @@ export default function CategoriesPage() {
     if (selectedCategories.length === 0) return;
     confirmDelete(selectedCategories);
   };
+  
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -1172,6 +1177,12 @@ export default function CategoriesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                             <Link href={`/categories/view/${id}`} className="flex items-center">
+                               <Eye className="mr-2 h-4 w-4" />
+                               View
+                             </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/categories/edit/${id}`} className="flex items-center">
                               <Edit className="mr-2 h-4 w-4" />
