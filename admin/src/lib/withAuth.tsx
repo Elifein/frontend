@@ -1,14 +1,13 @@
 'use client';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import useStore from './Zustand';
 
 type AuthOptions = {
   requireAuth?: boolean;
   allowedRoles?: string[];
   redirectTo?: string;
-  isOrgRoute?: boolean; // Add this to distinguish between org and regular routes
 };
 
 const excludedComponents = ['Navbar'];
@@ -24,19 +23,14 @@ export default function withAuth<P extends object>(
   }
 
   return function AuthProtected(props: P) {
-    const { userId, role, exp, isAuthenticated, checkAuth } = useStore();
+    const { role, exp, isAuthenticated, checkAuth } = useStore();
     const router = useRouter();
     const pathname = usePathname();
     const [loading, setLoading] = useState(true);
 
-    // Determine if we're in an org route based on the pathname
-    const isOrgRoute = pathname.startsWith('/org/') || options.isOrgRoute;
-
-    // Set the correct auth route based on whether we're in an org route
-    const authRoute = isOrgRoute ? '/org/auth' : '/auth';
-    const unauthorizedRoute = isOrgRoute
-      ? '/org/unauthorized'
-      : '/unauthorized';
+    // Set the correct auth route
+    const authRoute = '/';
+    const unauthorizedRoute = '/unauthorized';
 
     useEffect(() => {
       checkAuth();
@@ -48,7 +42,6 @@ export default function withAuth<P extends object>(
       console.log('isAuthenticated:', isAuthenticated);
       console.log('role:', role);
       console.log('allowedRoles:', options.allowedRoles);
-      console.log('isOrgRoute:', isOrgRoute);
 
       if (loading) return;
 
