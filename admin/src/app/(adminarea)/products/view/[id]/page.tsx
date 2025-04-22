@@ -2,7 +2,7 @@
 
 import type React from 'react';
 
-import { useState, useRef, useEffect, use } from 'react';
+import { useState,  useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -36,6 +36,49 @@ import {
 } from '../../../../../components/ui/dialog';
 import axiosInstance from '../../../../../lib/axiosInstance';
 import axios from 'axios';
+
+interface Product {
+    cat_id: string;
+    subcat_id: string;
+    identification: {
+      product_name: string;
+      product_sku: string;
+    };
+    descriptions: {
+      short_description: string;
+      full_description: string;
+    };
+    pricing: {
+      actual_price: string;
+      selling_price: string;
+    };
+    inventory: {
+      quantity: string;
+      stock_alert_status: 'instock' | 'outofstock' | 'backorder';
+    };
+    physical_attributes: {
+      weight: string;
+      dimensions: {
+        length: string;
+        width: string;
+        height: string;
+      };
+      shipping_class: string;
+    };
+    images: {
+      urls: string[];
+    };
+    tags_and_relationships: {
+      product_tags: string[];
+      linkedproductid: string;
+    };
+    status_flags: {
+      featured_product: boolean;
+      published_product: boolean;
+      product_status: boolean;
+    };
+  }
+  
 
 interface Subcategory {
   subcategory_id: string;
@@ -73,7 +116,7 @@ export default function ViewProductPage({ params }: Props) {
 
   const router = useRouter();
 
-  const [product, setProduct] = useState<any>({
+  const [product, setProduct] = useState<Product>({
     cat_id: '',
     subcat_id: '',
     identification: { product_name: '', product_sku: '' },

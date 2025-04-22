@@ -620,9 +620,9 @@ export default function ViewCategoryPage({ params }: Props) {
     return isSubcategory(cat) ? cat.subcat_status : cat.cat_status;
   };
 
-  const getCategoryRefId = (cat: CategoryData): string | undefined => {
-    return isSubcategory(cat) ? cat.subcat_ref_id : cat.cat_ref_id;
-  };
+  // const getCategoryRefId = (cat: CategoryData): string | undefined => {
+  //   return isSubcategory(cat) ? cat.subcat_ref_id : cat.cat_ref_id;
+  // };
 
   useEffect(() => {
     const fetchCategoryData = async () => {
