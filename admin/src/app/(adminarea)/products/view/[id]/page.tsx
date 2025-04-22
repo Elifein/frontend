@@ -471,7 +471,7 @@ export default function ViewProductPage({ params }: Props) {
                       <Label className="text-muted-foreground text-sm">Regular Price</Label>
                       <p className="font-medium">
                         {product.pricing.actual_price 
-                          ? `$${parseFloat(product.pricing.actual_price).toFixed(2)}` 
+                          ? `₹${parseFloat(product.pricing.actual_price).toFixed(2)}` 
                           : '—'}
                       </p>
                     </div>
@@ -480,7 +480,7 @@ export default function ViewProductPage({ params }: Props) {
                       <Label className="text-muted-foreground text-sm">Sale Price</Label>
                       <p className="font-medium">
                         {product.pricing.selling_price 
-                          ? `$${parseFloat(product.pricing.selling_price).toFixed(2)}` 
+                          ? `₹${parseFloat(product.pricing.selling_price).toFixed(2)}` 
                           : '—'}
                       </p>
                     </div>

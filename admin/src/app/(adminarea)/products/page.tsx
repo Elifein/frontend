@@ -413,7 +413,7 @@ export default function ProductsPage() {
                     )?.category_name || product.cat_id}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    $
+                  ₹
                     {parseFloat(
                       product.pricing?.selling_price ||
                         product.pricing?.actual_price ||
