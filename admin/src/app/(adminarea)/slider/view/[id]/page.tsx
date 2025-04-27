@@ -19,7 +19,7 @@ interface Slider {
   slider_timestamp: string;
 }
 
-export default function ViewSliderPage({ params }: { params: { id: string } }) {
+const ViewSliderPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
   const { id } = params;
   const [slider, setSlider] = useState<Slider | null>(null);
@@ -124,8 +124,6 @@ export default function ViewSliderPage({ params }: { params: { id: string } }) {
             </div>
 
             <Separator />
-
-           
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
@@ -139,4 +137,6 @@ export default function ViewSliderPage({ params }: { params: { id: string } }) {
       </Card>
     </div>
   );
-}
+};
+
+export default ViewSliderPage;
