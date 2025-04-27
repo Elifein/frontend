@@ -296,7 +296,7 @@ export default function EditSliderPage({ params }: { params: { id: string } }) {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">
-                      Slider Title <span className="text-red-500">*</span>
+                      Slider Title <span className="text-red-500">&quot;*</span>
                     </Label>
                     <Input
                       id="title"
@@ -319,7 +319,7 @@ export default function EditSliderPage({ params }: { params: { id: string } }) {
                       required
                     />
                     <p className="text-sm text-muted-foreground">
-                      The "slug" is the URL-friendly version of the title. It is
+                      The &quot;slug&quot; is the URL-friendly version of the title. It is
                       usually all lowercase and contains only letters, numbers,
                       and hyphens.
                     </p>

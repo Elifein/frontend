@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef } from "react"; // Removed ChangeEvent
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
