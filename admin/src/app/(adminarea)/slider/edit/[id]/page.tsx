@@ -1,3 +1,5 @@
+"use client"; // Add this at the top to mark the component as a client-side component
+
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Use useRouter for navigation
 import Link from "next/link";
