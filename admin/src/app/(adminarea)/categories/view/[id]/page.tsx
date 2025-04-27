@@ -530,10 +530,10 @@
 'use client'
 import React, { useEffect, use } from 'react';
 import axiosInstance from '../../../../../lib/axiosInstance';
-import { Label } from '@/src/components/ui/label';
-import { Card, CardContent } from '@/src/components/ui/card';
+import { Label } from '../../../../../components/ui/label';
+import { Card, CardContent } from '../../../../../components/ui/card';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/src/components/ui/button';
+import { Button } from '../../../../../components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 
