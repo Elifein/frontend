@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,7 +17,6 @@ import {
 } from "../../../../../components/ui/alert";
 import axiosInstance from "../../../../../lib/axiosInstance";
 
-// Interface for API response
 interface Slider {
   slider_id: string;
   slider_title: string;
@@ -36,7 +34,6 @@ interface ApiResponse {
   };
 }
 
-// Function to generate slug from title
 const generateSlug = (title: string) => {
   return title
     .toLowerCase()
@@ -45,9 +42,9 @@ const generateSlug = (title: string) => {
     .replace(/-+/g, "-"); // Replace multiple hyphens with single hyphen
 };
 
-export default function EditSliderPage({ params }: { params: { id: string } }) {
+export default function EditSliderPage() {
   const router = useRouter();
-  const { id } = params;
+  const { id } = router.query; // Using `useRouter` to access the `id` parameter
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -62,8 +59,8 @@ export default function EditSliderPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Fetch slider data on mount
   useEffect(() => {
+    if (!id) return; // Only fetch if `id` is available
     const fetchSlider = async () => {
       try {
         setIsLoading(true);
@@ -103,7 +100,6 @@ export default function EditSliderPage({ params }: { params: { id: string } }) {
       [name]: value,
     }));
 
-    // Auto-generate slug from title if it hasn't been manually edited
     if (name === "title" && formData.slug === generateSlug(formData.title)) {
       setFormData((prev) => ({
         ...prev,
@@ -151,7 +147,7 @@ export default function EditSliderPage({ params }: { params: { id: string } }) {
       submissionData.append("slider_title", formData.title);
       submissionData.append("slider_slug", formData.slug);
       if (image.file) {
-        submissionData.append("file", image.file); // Match API field name
+        submissionData.append("file", image.file);
       }
 
       const response = await axiosInstance.put(`sliders/${id}`, submissionData, {
