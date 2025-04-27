@@ -137,28 +137,36 @@
 //     </div>
 //   );
 // }
-
-
 'use client';
 
-import { use, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import axiosInstance from '../../../lib/axiosInstance';
+import { useSearchParams } from 'next/navigation';  // Import useSearchParams
 
-export default function RegisterPage({ params }: { params: Promise<{ searchParams: { email?: string; returnUrl?: string } }> }) {
-  const { searchParams } = use(params);
-  const initialEmail = searchParams.email || '';
-  const returnUrl = searchParams.returnUrl || '/';
-
+export default function RegisterPage() {
   const router = useRouter();
-  const [email, setEmail] = useState(initialEmail);
+  const searchParams = useSearchParams();  // Use useSearchParams to get query parameters
+  
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [returnUrl, setReturnUrl] = useState('/');
+
+  // Set initial email and returnUrl from query parameters
+  useEffect(() => {
+    if (searchParams.get('email')) {
+      setEmail(searchParams.get('email') || '');
+    }
+    if (searchParams.get('returnUrl')) {
+      setReturnUrl(searchParams.get('returnUrl') || '/');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,7 +188,6 @@ export default function RegisterPage({ params }: { params: Promise<{ searchParam
     } catch {
       setError('Failed to create account. Please try again.');
     }
-    
   };
 
   const togglePasswordVisibility = () => {
