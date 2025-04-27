@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // Use useRouter for navigation
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Upload, Trash2, AlertCircle } from "lucide-react";
@@ -40,9 +40,13 @@ const generateSlug = (title: string) => {
     .replace(/-+/g, "-"); // Replace multiple hyphens with single hyphen
 };
 
-export default function EditSliderPage() {
+interface Props {
+  params: { id: string };
+}
+
+export default function EditSliderPage({ params }: Props) {
   const router = useRouter();
-  const { id } = useParams(); // Use useParams instead of useRouter.query
+  const { id } = params; // Directly use the `params` prop here
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: "",
