@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Upload, Trash2, AlertCircle } from "lucide-react";
@@ -44,7 +42,7 @@ const generateSlug = (title: string) => {
 
 export default function EditSliderPage() {
   const router = useRouter();
-  const { id } = router.query; // Using `useRouter` to access the `id` parameter
+  const { id } = useParams(); // Use useParams instead of useRouter.query
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: "",
