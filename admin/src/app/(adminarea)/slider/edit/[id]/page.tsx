@@ -42,6 +42,7 @@ const generateSlug = (title: string) => {
     .replace(/-+/g, "-");
 };
 
+// Define Props to match Next.js dynamic route expectations
 interface Props {
   params: {
     id: string;
