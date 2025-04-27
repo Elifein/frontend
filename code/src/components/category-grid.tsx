@@ -33,13 +33,7 @@ export function CategoryGrid() {
     fetchCategories();
   }, []);
 
-  // Define badge for specific categories (e.g., "Books")
-  const getBadge = (categoryName: string) => {
-    if (categoryName === 'Books') {
-      return '40% Off + Free Shipping!';
-    }
-    return null;
-  };
+
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -51,9 +45,7 @@ export function CategoryGrid() {
             className="bg-gray-100 hover:bg-gray-200 transition-colors p-4 text-center rounded-md border border-gray-200"
           >
             <div className="text-[#1a7ec2] font-medium text-lg">{category.category_name}</div>
-            {/* {getBadge(category.category_name) && (
-              <div className="text-sm text-gray-700 mt-1">{getBadge(category.category_name)}</div>
-            )} */}
+           
           </Link>
         ))
       ) : (

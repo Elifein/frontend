@@ -1,3 +1,7 @@
+'use client';
+
+import Link from 'next/link';
+
 export default function OrderConfirmationPage() {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -5,9 +9,12 @@ export default function OrderConfirmationPage() {
         <p className="text-gray-600 mt-4">
           Thank you for your order! You’ll receive a confirmation email soon.
         </p>
-        <a href="/" className="mt-4 inline-block bg-[#1a7ec2] text-white px-4 py-2 rounded hover:bg-[#1a4e78]">
+        <Link
+          href="/"
+          className="mt-4 inline-block bg-[#1a7ec2] text-white px-4 py-2 rounded hover:bg-[#1a4e78]"
+        >
           Continue Shopping
-        </a>
+        </Link>
       </div>
     );
-  }
+}

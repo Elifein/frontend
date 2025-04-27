@@ -27,20 +27,20 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axiosInstance.get(`products/by-category/${unwrappedParams.category}`);
-        
-        // Generate slugs dynamically if not present in the response
-        const productsWithSlugs = response.data.map((item: any) => ({
+        const response = await axiosInstance.get<Product[]>(`products/by-category/${unwrappedParams.category}`);
+    
+        const productsWithSlugs = response.data.map((item) => ({
           ...item,
-          slug: item.slug || slugify(item.product_name), // Generate slug if not present
+          slug: item.slug || slugify(item.product_name),
         }));
-        
+    
         setProducts(productsWithSlugs);
       } catch (error) {
         console.error('Error fetching products for category:', error);
         setProducts([]);
       }
     };
+    
 
     fetchProducts();
   }, [unwrappedParams.category]);
