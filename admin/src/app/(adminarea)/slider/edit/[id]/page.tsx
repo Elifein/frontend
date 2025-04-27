@@ -310,7 +310,7 @@ export default function EditSliderPage({ params }: Props) {
                       required
                     />
                     <p className="text-sm text-muted-foreground">
-                      The "slug" is the URL-friendly version of the title. It is
+                      The slug is the URL-friendly version of the title. It is
                       usually all lowercase and contains only letters, numbers,
                       and hyphens.
                     </p>
