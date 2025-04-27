@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '../../../components/ui/button';
@@ -8,15 +8,14 @@ import { Input } from '../../../components/ui/input';
 import { useAuth } from '../../../lib/auth-context';
 
 interface LoginPageProps {
-  searchParams: {
+  searchParams: Promise<{
     returnUrl?: string;
     create?: string;
-  };
+  }>;
 }
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
-  const returnUrl = searchParams.returnUrl || '/';
-
+  const { returnUrl = '/' } = use(searchParams); // Use 'use' to resolve the Promise
   const { login } = useAuth();
   const router = useRouter();
 
