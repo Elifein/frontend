@@ -400,7 +400,7 @@ export default function ProductsPage() {
                     </div>
                     {product.status_flags.featured_product && (
                       <Badge variant="outline" className="mt-1">
-                        Featured
+                        Best Seller
                       </Badge>
                     )}
                   </TableCell>

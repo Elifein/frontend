@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Users,
   Settings,
+  Image,
 } from 'lucide-react';
 import Logo from './logo';
 
@@ -25,6 +26,7 @@ const SidebarAdmin: React.FC<SidebarAdminProps> = ({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+    { name: 'Slider', href: '/slider', icon: Image },
     { name: 'Categories', href: '/categories', icon: Package },
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Orders', href: '/orders', icon: ShoppingCart },

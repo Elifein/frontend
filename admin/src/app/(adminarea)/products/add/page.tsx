@@ -516,7 +516,7 @@ export default function AddProductPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="featured">Featured Product</Label>
+                  <Label htmlFor="featured">Best Seller</Label>
                   <Switch
                     id="featured"
                     checked={formData.status_flags.featured_product}

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     PORT: '3000', // must be a string
   },
   images: {
-    domains: ['blr1.digitaloceanspaces.com'],
+    domains: ['blr1.digitaloceanspaces.com', 'via.placeholder.com'],
   },
 };
 
