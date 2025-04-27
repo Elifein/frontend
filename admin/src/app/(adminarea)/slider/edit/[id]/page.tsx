@@ -1,7 +1,7 @@
-"use client"; // Add this at the top to mark the component as a client-side component
+"use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Use useRouter for navigation
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Upload, Trash2, AlertCircle } from "lucide-react";
@@ -37,18 +37,21 @@ interface ApiResponse {
 const generateSlug = (title: string) => {
   return title
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "") // Remove special characters
-    .replace(/\s+/g, "-") // Replace spaces with hyphens
-    .replace(/-+/g, "-"); // Replace multiple hyphens with single hyphen
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 };
 
+// Define Props to match Next.js dynamic route expectations
 interface Props {
-  params: { id: string };
+  params: {
+    id: string;
+  };
 }
 
 export default function EditSliderPage({ params }: Props) {
   const router = useRouter();
-  const { id } = params; // Directly use the `params` prop here
+  const { id } = params;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -64,7 +67,7 @@ export default function EditSliderPage({ params }: Props) {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!id) return; // Only fetch if `id` is available
+    if (!id) return;
     const fetchSlider = async () => {
       try {
         setIsLoading(true);
@@ -162,11 +165,6 @@ export default function EditSliderPage({ params }: Props) {
 
       if (response.data.status_code === 200) {
         setSuccess(true);
-        setFormData({
-          title: "",
-          slug: "",
-        });
-        setImage({ file: null, preview: "" });
         setTimeout(() => router.push("/slider"), 2000);
       }
     } catch (err) {
@@ -205,11 +203,7 @@ export default function EditSliderPage({ params }: Props) {
           <Button variant="outline" asChild>
             <Link href="/slider">Cancel</Link>
           </Button>
-          <Button
-            type="submit"
-            form="slider-form"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" form="slider-form" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>
@@ -234,7 +228,6 @@ export default function EditSliderPage({ params }: Props) {
       )}
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Slider Image Section */}
         <div className="md:col-span-1">
           <Card>
             <CardContent className="p-6">
@@ -288,7 +281,6 @@ export default function EditSliderPage({ params }: Props) {
           </Card>
         </div>
 
-        {/* Slider Details Form */}
         <div className="md:col-span-2">
           <form id="slider-form" onSubmit={handleSubmit}>
             <Card>
@@ -296,7 +288,7 @@ export default function EditSliderPage({ params }: Props) {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">
-                      Slider Title <span className="text-red-500">&quot;*</span>
+                      Slider Title <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="title"
@@ -319,7 +311,7 @@ export default function EditSliderPage({ params }: Props) {
                       required
                     />
                     <p className="text-sm text-muted-foreground">
-                      The &quot;slug&quot; is the URL-friendly version of the title. It is
+                      The "slug" is the URL-friendly version of the title. It is
                       usually all lowercase and contains only letters, numbers,
                       and hyphens.
                     </p>
