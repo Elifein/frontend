@@ -41,7 +41,7 @@ import {
 } from '../../../components/ui/select';
 import axiosInstance from '../../../lib/axiosInstance';
 import axios from 'axios';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/src/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
 
 interface Product {
   product_id: string;
