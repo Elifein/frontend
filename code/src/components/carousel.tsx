@@ -113,7 +113,7 @@ export function Carousel() {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/v1/allslides/?status=false")
+        const response = await axios.get("allslides/?status=false")
         const apiSlides: Slide[] = response.data.data.sliders.map((slider: SliderData) => ({
           id: slider.slider_id,
           image: slider.slider_image,
