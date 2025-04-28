@@ -90,7 +90,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Pause, Play } from "lucide-react"
-import axios from "axios"
+import axiosInstance from '../lib/axiosInstance';
 
 // Define types for API response data
 interface SliderData {
@@ -113,7 +113,7 @@ export function Carousel() {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const response = await axios.get("allslides/?status=false")
+        const response = await axiosInstance.get("allslides/?status=false")
         const apiSlides: Slide[] = response.data.data.sliders.map((slider: SliderData) => ({
           id: slider.slider_id,
           image: slider.slider_image,
