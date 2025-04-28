@@ -801,19 +801,19 @@ export function Header() {
                     </Link>
                   </DropdownMenuTrigger>
                   {category.subcategories.length > 0 && (
-                    <DropdownMenuContent className="bg-white border rounded-md shadow-lg z-50 min-w-[200px]">
-                      {category.subcategories.map((subcategory) => (
-                        <DropdownMenuItem key={subcategory.subcategory_id} asChild>
-                          <Link
-                            href={`/${category.slug}/${subcategory.slug}`}
-                            className="block px-4 py-2 text-[#1a4e78] hover:bg-gray-100"
-                          >
-                            {subcategory.subcategory_name}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  )}
+  <DropdownMenuContent className="bg-white border rounded-md shadow-lg z-50 min-w-[200px]">
+    {category.subcategories.map((subcategory) => (
+      <DropdownMenuItem key={subcategory.subcategory_id} asChild>
+        <Link
+          href={`/${encodeURIComponent(subcategory.subcategory_name)}`} // Use subcategory_name and encode it
+          className="block px-4 py-2 text-[#1a4e78] hover:bg-gray-100"
+        >
+          {subcategory.subcategory_name}
+        </Link>
+      </DropdownMenuItem>
+    ))}
+  </DropdownMenuContent>
+)}
                 </DropdownMenu>
               </li>
             ))}
