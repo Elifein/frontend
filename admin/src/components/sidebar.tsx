@@ -10,6 +10,7 @@ import {
   Users,
   Settings,
   Image,
+  DollarSign,
 } from 'lucide-react';
 import Logo from './logo';
 
@@ -27,6 +28,7 @@ const SidebarAdmin: React.FC<SidebarAdminProps> = ({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Slider', href: '/slider', icon: Image },
+    { name: 'Ads', href: '/ads', icon: DollarSign },
     { name: 'Categories', href: '/categories', icon: Package },
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Orders', href: '/orders', icon: ShoppingCart },

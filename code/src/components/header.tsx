@@ -571,7 +571,7 @@ export function Header() {
   };
 
   return (
-    <header className="border-b sticky top-0 bg-white">
+    <header className="border-b sticky top-0 bg-white z-50">
       <div className="container mx-auto px-4 py-3">
         {/* Mobile Header */}
         <div className="flex items-center justify-between md:hidden">
@@ -630,7 +630,7 @@ export function Header() {
             </Button>
           </div>
           {showSearchDropdown && (
-            <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-60 max-h-96 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-[2000] max-h-96 overflow-y-auto">
               {isSearchLoading ? (
                 <div className="p-4 text-center text-[#1a4e78]">Loading...</div>
               ) : searchResults.length === 0 ? (
@@ -786,7 +786,7 @@ export function Header() {
       </div>
 
       {/* Desktop Navigation */}
-      <nav className="bg-[#1a4e78] text-white hidden md:block relative z-50">
+      <nav className="bg-[#1a4e78] text-white hidden md:block relative z-10">
         <div className="container mx-auto">
           <ul className="flex overflow-x-auto">
             {categories.map((category) => (

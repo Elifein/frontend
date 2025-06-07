@@ -323,10 +323,10 @@ export function Footer() {
             <Link href="#" className="hover:underline">
               Tax Information for AL Residents
             </Link>
-            <Link href="#" className="hover:underline">
+            <Link href="/termsandconditions" className="hover:underline">
               Terms & Conditions
             </Link>
-            <Link href="#" className="hover:underline">
+            <Link href="/privacypolicy" className="hover:underline">
               Privacy Notice
             </Link>
             <Link href="#" className="hover:underline">

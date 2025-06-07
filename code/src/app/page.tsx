@@ -1,5 +1,5 @@
 import { Carousel } from "../components/carousel"
-import { CategoryGrid } from "../components/category-grid"
+import { AdGrid } from "../components/category-grid"
 import { CookieConsent } from "../components/cookie-consent"
 import { SidebarCategories } from "../components/sidebar-categories"
 // import { FeaturedAuthor } from "@/components/featured-author"
@@ -37,7 +37,7 @@ export default function Home() {
 
             
             <div className="mt-6">
-              <CategoryGrid />
+              <AdGrid />
             </div>
           </div>
         </div>

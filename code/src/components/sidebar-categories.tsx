@@ -72,7 +72,7 @@ export function SidebarCategories() {
                     {category.subcategories.map((subcategory) => (
                       <li key={subcategory.subcategory_id}>
                         <Link
-                          href={`/${category.slug}/${subcategory.slug}`}
+                          href={`${subcategory.slug}`}
                           className="block px-3 py-1.5 text-sm hover:bg-gray-200 transition-colors"
                         >
                           {subcategory.subcategory_name}
@@ -90,13 +90,13 @@ export function SidebarCategories() {
         )}
       </ul>
 
-      <div className="bg-gray-200 p-2 font-semibold mt-4">REFINE BY</div>
-      <div className="p-3">
+      {/* <div className="bg-gray-200 p-2 font-semibold mt-4">REFINE BY</div> */}
+      {/* <div className="p-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Top Rated</span>
           <span className="text-sm text-gray-500">+</span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
