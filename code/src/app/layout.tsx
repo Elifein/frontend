@@ -19,7 +19,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 const metadata: Metadata = {
   title: 'Elifein Ecommerce Store',
-  description: 'Your friendly E-commerce Store',
+  description: 'Your friendly E-commerce Stores',
 };
 
 export default function RootLayout({

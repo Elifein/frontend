@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Elifein Admin Portal',
-  description: 'Elifein admin application',
+  description: 'Elifein admin applications',
 };
 
 export default function RootLayout({
