@@ -425,7 +425,7 @@ const handleInputChange = (
         </div>
 
         <div className="flex gap-2">
-          <Dialog
+          {/* <Dialog
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
           >
@@ -461,7 +461,7 @@ const handleInputChange = (
                 </Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
 
           <Button variant="outline" asChild>
             <Link href="/products">Cancel</Link>

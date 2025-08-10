@@ -12,6 +12,7 @@
 // import Logo from './logo';
 // import axiosInstance from '../lib/axiosInstance';
 // import { useCart } from '../lib/cart-context';
+// import { useAuth, authUtils } from '../lib/auth-context';
 // import {
 //   DropdownMenu,
 //   DropdownMenuContent,
@@ -49,13 +50,24 @@
 //   const searchRef = useRef<HTMLDivElement>(null);
 //   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 //   const { cart, cartCount } = useCart();
+//   const { user, isAuthenticated, logout, isLoading } = useAuth();
+
+//   // Enhanced debugging for auth state
+//   useEffect(() => {
+//     console.log('Header auth state:', {
+//       isLoading,
+//       isAuthenticated,
+//       user: user ? JSON.stringify(user, null, 2) : null,
+//       contextAvailable: !!useAuth,
+//     });
+//   }, [isLoading, isAuthenticated, user]);
 
 //   // Fetch categories
 //   useEffect(() => {
 //     const fetchCategories = async () => {
 //       try {
 //         const response = await axiosInstance.get('get-menu-categories/');
-//         setCategories(response.data.data);
+//         setCategories(response.data.data || []);
 //       } catch (error) {
 //         console.error('Error fetching categories:', error);
 //       }
@@ -78,7 +90,7 @@
 //         const response = await axiosInstance.get(
 //           `/products/search?query=${encodeURIComponent(searchQuery)}`
 //         );
-//         setSearchResults(response.data);
+//         setSearchResults(response.data || []);
 //         setShowSearchDropdown(true);
 //       } catch (error) {
 //         console.error('Error fetching search results:', error);
@@ -124,15 +136,26 @@
 //     setShowSearchDropdown(false);
 //   };
 
+//   // Render loading state until auth is initialized
+//   if (isLoading) {
+//     return (
+//       <div className="border-b sticky top-0 bg-white z-50">
+//         <div className="container mx-auto px-4 py-3 text-center text-[#1a4e78] animate-pulse">
+//           Loading authentication...
+//         </div>
+//       </div>
+//     );
+//   }
+
 //   return (
-//     <header className="border-b sticky top-0 bg-white ">
+//     <header className="border-b sticky top-0 bg-white z-50">
 //       <div className="container mx-auto px-4 py-3">
 //         {/* Mobile Header */}
 //         <div className="flex items-center justify-between md:hidden">
 //           <button onClick={toggle} className="text-[#1a4e78]">
 //             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
 //           </button>
-          
+
 //           <Link href="/" className="flex-shrink-0">
 //             <div className="flex items-center">
 //               <Logo />
@@ -141,10 +164,10 @@
 //               </div>
 //             </div>
 //           </Link>
-          
+
 //           <div className="flex items-center gap-2">
-//             <button 
-//               onClick={() => setIsSearchOpen(!isSearchOpen)} 
+//             <button
+//               onClick={() => setIsSearchOpen(!isSearchOpen)}
 //               className="text-[#1a4e78]"
 //             >
 //               <Search className="h-5 w-5" />
@@ -157,7 +180,7 @@
 //             </Link>
 //           </div>
 //         </div>
-        
+
 //         {/* Mobile Search */}
 //         <div
 //           className={cn(
@@ -184,7 +207,7 @@
 //             </Button>
 //           </div>
 //           {showSearchDropdown && (
-//             <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+//             <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-[2000] max-h-96 overflow-y-auto">
 //               {isSearchLoading ? (
 //                 <div className="p-4 text-center text-[#1a4e78]">Loading...</div>
 //               ) : searchResults.length === 0 ? (
@@ -249,7 +272,7 @@
 //               </Button>
 //             </div>
 //             {showSearchDropdown && (
-//               <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+//               <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-60 max-h-96 overflow-y-auto">
 //                 {isSearchLoading ? (
 //                   <div className="p-4 text-center text-[#1a4e78]">Loading...</div>
 //                 ) : searchResults.length === 0 ? (
@@ -281,7 +304,13 @@
 //           </div>
 
 //           <div className="flex items-center space-x-4">
-//             <AccountDropdown />
+//             {isAuthenticated ? (
+//               <AccountDropdown />
+//             ) : (
+//               <Link href="/apps/login" className="text-[#1a4e78] hover:underline">
+//                 Sign In
+//               </Link>
+//             )}
 //             <div className="flex flex-col items-center">
 //               <DropdownMenu>
 //                 <DropdownMenuTrigger asChild>
@@ -340,7 +369,7 @@
 //       </div>
 
 //       {/* Desktop Navigation */}
-//       <nav className="bg-[#1a4e78] text-white hidden md:block relative z-50">
+//       <nav className="bg-[#1a4e78] text-white hidden md:block relative z-10">
 //         <div className="container mx-auto">
 //           <ul className="flex overflow-x-auto">
 //             {categories.map((category) => (
@@ -374,7 +403,7 @@
 //           </ul>
 //         </div>
 //       </nav>
-      
+
 //       {/* Mobile Menu */}
 //       <div
 //         className={cn(
@@ -384,9 +413,15 @@
 //       >
 //         <div className="h-full overflow-y-auto pt-16 pb-20">
 //           <div className="px-4 py-2 border-b">
-//             <AccountDropdown />
+//             {isAuthenticated ? (
+//               <AccountDropdown />
+//             ) : (
+//               <Link href="/apps/login" className="block py-2 text-[#1a4e78]">
+//                 Sign In
+//               </Link>
+//             )}
 //           </div>
-          
+
 //           <div className="px-4 py-2 border-b">
 //             <h3 className="font-bold text-[#1a4e78] mb-2">Categories</h3>
 //             <ul className="space-y-2">
@@ -395,6 +430,7 @@
 //                   <Link
 //                     href={`/${category.slug}`}
 //                     className="flex items-center justify-between py-2"
+//                     onClick={toggle}
 //                   >
 //                     <span>{category.category_name}</span>
 //                     <ChevronRight className="h-4 w-4" />
@@ -406,6 +442,7 @@
 //                           <Link
 //                             href={`/${category.slug}/${subcategory.slug}`}
 //                             className="block py-1 text-sm"
+//                             onClick={toggle}
 //                           >
 //                             {subcategory.subcategory_name}
 //                           </Link>
@@ -417,24 +454,55 @@
 //               ))}
 //             </ul>
 //           </div>
-          
+
 //           <div className="px-4 py-2">
 //             <h3 className="font-bold text-[#1a4e78] mb-2">Account</h3>
 //             <ul className="space-y-2">
+//               {isAuthenticated ? (
+//                 <>
+//                   <li>
+//                     <span className="block py-2 text-[#1a4e78] font-semibold">
+//                       {authUtils.getUserFullName(user)}
+//                     </span>
+//                   </li>
+//                   <li>
+//                     <button
+//                       onClick={() => {
+//                         logout();
+//                         toggle();
+//                       }}
+//                       className="block py-2 text-[#1a4e78] w-full text-left"
+//                     >
+//                       Logout
+//                     </button>
+//                   </li>
+//                 </>
+//               ) : (
+//                 <li>
+//                   <Link href="/apps/login" className="block py-2" onClick={toggle}>
+//                     Sign In
+//                   </Link>
+//                 </li>
+//               )}
 //               <li>
-//                 <Link href="/apps/login" className="block py-2">Sign In</Link>
+//                 <Link href="/apps/account" className="block py-2" onClick={toggle}>
+//                   My Account
+//                 </Link>
 //               </li>
 //               <li>
-//                 <Link href="/apps/account" className="block py-2">My Account</Link>
+//                 <Link href="/apps/order-status" className="block py-2" onClick={toggle}>
+//                   Order Status
+//                 </Link>
 //               </li>
 //               <li>
-//                 <Link href="/apps/order-status" className="block py-2">Order Status</Link>
+//                 <Link href="/Christian/Books/wishlist" className="block py-2" onClick={toggle}>
+//                   Wishlist
+//                 </Link>
 //               </li>
 //               <li>
-//                 <Link href="/Christian/Books/wishlist" className="block py-2">Wishlist</Link>
-//               </li>
-//               <li>
-//                 <Link href="/apps/gift-card" className="block py-2">Gift Cards</Link>
+//                 <Link href="/apps/gift-card" className="block py-2" onClick={toggle}>
+//                   Gift Cards
+//                 </Link>
 //               </li>
 //             </ul>
 //           </div>
@@ -444,6 +512,9 @@
 //   );
 // }
 
+
+
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -452,12 +523,12 @@ import Image from 'next/image';
 import { Search, ShoppingCart, Menu, X, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { AccountDropdown } from '../components/account-dropdown';
 import { useMobileMenu } from '../hooks/use-mobile-menu';
 import { cn } from '../lib/utils';
 import Logo from './logo';
 import axiosInstance from '../lib/axiosInstance';
 import { useCart } from '../lib/cart-context';
+import { useAuth } from '../lib/auth-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -495,13 +566,24 @@ export function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const { cart, cartCount } = useCart();
+  const { user, isAuthenticated, logout, isLoading } = useAuth();
+
+  // Enhanced debugging for auth state
+  useEffect(() => {
+    console.log('Header auth state:', {
+      isLoading,
+      isAuthenticated,
+      user: user ? JSON.stringify(user, null, 2) : null,
+      contextAvailable: !!useAuth,
+    });
+  }, [isLoading, isAuthenticated, user]);
 
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await axiosInstance.get('get-menu-categories/');
-        setCategories(response.data.data);
+        setCategories(response.data.data || []);
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
@@ -524,7 +606,7 @@ export function Header() {
         const response = await axiosInstance.get(
           `/products/search?query=${encodeURIComponent(searchQuery)}`
         );
-        setSearchResults(response.data);
+        setSearchResults(response.data || []);
         setShowSearchDropdown(true);
       } catch (error) {
         console.error('Error fetching search results:', error);
@@ -557,7 +639,7 @@ export function Header() {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -569,6 +651,17 @@ export function Header() {
     e.preventDefault();
     setShowSearchDropdown(false);
   };
+
+  // Render loading state until auth is initialized
+  if (isLoading) {
+    return (
+      <div className="border-b sticky top-0 bg-white z-50">
+        <div className="container mx-auto px-4 py-3 text-center text-[#1a4e78] animate-pulse">
+          Loading authentication...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <header className="border-b sticky top-0 bg-white z-50">
@@ -727,7 +820,18 @@ export function Header() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <AccountDropdown />
+            {isAuthenticated ? (
+              <button
+                onClick={logout}
+                className="text-[#1a4e78] hover:underline"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link href="/apps/login" className="text-[#1a4e78] hover:underline">
+                Sign In
+              </Link>
+            )}
             <div className="flex flex-col items-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -801,19 +905,19 @@ export function Header() {
                     </Link>
                   </DropdownMenuTrigger>
                   {category.subcategories.length > 0 && (
-  <DropdownMenuContent className="bg-white border rounded-md shadow-lg z-50 min-w-[200px]">
-    {category.subcategories.map((subcategory) => (
-      <DropdownMenuItem key={subcategory.subcategory_id} asChild>
-        <Link
-          href={`/${encodeURIComponent(subcategory.subcategory_name)}`} // Use subcategory_name and encode it
-          className="block px-4 py-2 text-[#1a4e78] hover:bg-gray-100"
-        >
-          {subcategory.subcategory_name}
-        </Link>
-      </DropdownMenuItem>
-    ))}
-  </DropdownMenuContent>
-)}
+                    <DropdownMenuContent className="bg-white border rounded-md shadow-lg z-50 min-w-[200px]">
+                      {category.subcategories.map((subcategory) => (
+                        <DropdownMenuItem key={subcategory.subcategory_id} asChild>
+                          <Link
+                            href={`/${category.slug}/${subcategory.slug}`}
+                            className="block px-4 py-2 text-[#1a4e78] hover:bg-gray-100"
+                          >
+                            {subcategory.subcategory_name}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  )}
                 </DropdownMenu>
               </li>
             ))}
@@ -830,7 +934,21 @@ export function Header() {
       >
         <div className="h-full overflow-y-auto pt-16 pb-20">
           <div className="px-4 py-2 border-b">
-            <AccountDropdown />
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  logout();
+                  toggle();
+                }}
+                className="block py-2 text-[#1a4e78] hover:underline"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link href="/apps/login" className="block py-2 text-[#1a4e78]">
+                Sign In
+              </Link>
+            )}
           </div>
 
           <div className="px-4 py-2 border-b">
@@ -841,6 +959,7 @@ export function Header() {
                   <Link
                     href={`/${category.slug}`}
                     className="flex items-center justify-between py-2"
+                    onClick={toggle}
                   >
                     <span>{category.category_name}</span>
                     <ChevronRight className="h-4 w-4" />
@@ -852,6 +971,7 @@ export function Header() {
                           <Link
                             href={`/${category.slug}/${subcategory.slug}`}
                             className="block py-1 text-sm"
+                            onClick={toggle}
                           >
                             {subcategory.subcategory_name}
                           </Link>
@@ -868,19 +988,24 @@ export function Header() {
             <h3 className="font-bold text-[#1a4e78] mb-2">Account</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/apps/login" className="block py-2">Sign In</Link>
+                <Link href="/apps/account" className="block py-2" onClick={toggle}>
+                  My Account
+                </Link>
               </li>
               <li>
-                <Link href="/apps/account" className="block py-2">My Account</Link>
+                <Link href="/apps/order-status" className="block py-2" onClick={toggle}>
+                  Order Status
+                </Link>
               </li>
               <li>
-                <Link href="/apps/order-status" className="block py-2">Order Status</Link>
+                <Link href="/Christian/Books/wishlist" className="block py-2" onClick={toggle}>
+                  Wishlist
+                </Link>
               </li>
               <li>
-                <Link href="/Christian/Books/wishlist" className="block py-2">Wishlist</Link>
-              </li>
-              <li>
-                <Link href="/apps/gift-card" className="block py-2">Gift Cards</Link>
+                <Link href="/apps/gift-card" className="block py-2" onClick={toggle}>
+                  Gift Cards
+                </Link>
               </li>
             </ul>
           </div>

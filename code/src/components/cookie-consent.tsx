@@ -1,11 +1,33 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "../components/ui/button"
 
 export function CookieConsent() {
-  const [isVisible, setIsVisible] = useState(true)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    // Check if the user has already accepted or managed the cookie consent
+    const hasConsented = localStorage.getItem("cookieConsent")
+    if (!hasConsented) {
+      setIsVisible(true)
+    }
+  }, [])
+
+  const handleAccept = () => {
+    // Set the flag in localStorage and hide the consent popup
+    localStorage.setItem("cookieConsent", "true")
+    setIsVisible(false)
+  }
+
+  const handleManageCookies = () => {
+    // Optionally, you can handle "Manage Cookies" differently, e.g., redirect to a settings page
+    // For now, we'll treat it the same as "Accept" to hide the popup
+    localStorage.setItem("cookieConsent", "true")
+    setIsVisible(false)
+  }
 
   if (!isVisible) return null
 
@@ -25,10 +47,10 @@ export function CookieConsent() {
           targeted marketing campaigns, and allow content sharing to social media.
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-[#1a4e78] text-[#1a4e78]" onClick={() => setIsVisible(false)}>
+          <Button variant="outline" className="border-[#1a4e78] text-[#1a4e78]" onClick={handleManageCookies}>
             Manage Cookies
           </Button>
-          <Button className="bg-[#1a4e78] hover:bg-[#0f3a5f]" onClick={() => setIsVisible(false)}>
+          <Button className="bg-[#1a4e78] hover:bg-[#0f3a5f]" onClick={handleAccept}>
             Accept All
           </Button>
         </div>

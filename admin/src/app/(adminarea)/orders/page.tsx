@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-
-import { ShoppingCart, Filter, MoreHorizontal, Eye } from 'lucide-react';
-
+import { useState, useEffect } from 'react';
+import { ShoppingCart, Filter, MoreHorizontal, Eye, Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,85 +32,76 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/card';
+import axiosInstance from '../../../lib/axiosInstance';
+import { toast } from 'sonner';
 
-// Sample orders data
-const orders = [
-  {
-    id: 'ORD-001',
-    customer: 'John Smith',
-    email: 'john.smith@example.com',
-    date: '2023-06-12',
-    status: 'Delivered',
-    total: 129.99,
-    items: 3,
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
-    date: '2023-06-11',
-    status: 'Processing',
-    total: 79.5,
-    items: 2,
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Michael Brown',
-    email: 'mbrown@example.com',
-    date: '2023-06-10',
-    status: 'Shipped',
-    total: 249.99,
-    items: 4,
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Emily Davis',
-    email: 'emily.davis@example.com',
-    date: '2023-06-09',
-    status: 'Delivered',
-    total: 45.75,
-    items: 1,
-  },
-  {
-    id: 'ORD-005',
-    customer: 'David Wilson',
-    email: 'dwilson@example.com',
-    date: '2023-06-08',
-    status: 'Cancelled',
-    total: 189.0,
-    items: 3,
-  },
-  {
-    id: 'ORD-006',
-    customer: 'Jessica Taylor',
-    email: 'jtaylor@example.com',
-    date: '2023-06-07',
-    status: 'Delivered',
-    total: 112.5,
-    items: 2,
-  },
-  {
-    id: 'ORD-007',
-    customer: 'Robert Martinez',
-    email: 'rmartinez@example.com',
-    date: '2023-06-06',
-    status: 'Processing',
-    total: 67.25,
-    items: 1,
-  },
-  {
-    id: 'ORD-008',
-    customer: 'Amanda Lee',
-    email: 'alee@example.com',
-    date: '2023-06-05',
-    status: 'Shipped',
-    total: 154.99,
-    items: 3,
-  },
-];
+// Type definitions based on your backend response
+interface OrderItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  selling_price: number;
+  category_slug: string;
+  slug: string;
+  image_url: string;
+}
+
+interface Order {
+  order_id: string;
+  user_id: string;
+  total_amount: number;
+  status: string;
+  shipping_address: string;
+  custom_notes: string;
+  items: OrderItem[];
+  created_at: string;
+  payment_id: string | null;
+  razorpay_order_id: string;
+  payment_status: string | null;
+  user_firstname : string | null;
+}
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  // Fetch orders from backend
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axiosInstance.get('/orders/');
+      console.log('Orders response:', response.data);
+      
+      setOrders(response.data);
+    } catch (error: any) {
+      console.error('Error fetching orders:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to fetch orders';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // Filter orders based on status
+  const filteredOrders = statusFilter === 'all' 
+    ? orders 
+    : orders.filter(order => order.status.toLowerCase() === statusFilter.toLowerCase());
+
+  // Calculate statistics
+  const totalOrders = orders.length;
+  const processingOrders = orders.filter(order => order.status.toLowerCase() === 'pending').length;
+  const confirmedOrders = orders.filter(order => order.status.toLowerCase() === 'confirmed').length;
+  const totalRevenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
 
   const toggleOrderSelection = (orderId: string) => {
     setSelectedOrders((prev) =>
@@ -124,12 +112,64 @@ export default function OrdersPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedOrders.length === orders.length) {
+    if (selectedOrders.length === filteredOrders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(orders.map((order) => order.id));
+      setSelectedOrders(filteredOrders.map((order) => order.order_id));
     }
   };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Get status badge variant
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+      case 'completed':
+        return 'default';
+      case 'pending':
+        return 'secondary';
+      case 'shipped':
+        return 'outline';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
+  // Get customer name from user_id (you might want to fetch user details separately)
+  const getCustomerInfo = (userId: string) => {
+    return {
+      name: `Customer ${userId}`,
+      email: `${userId}@example.com` // You might want to fetch real user data
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading orders...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={fetchOrders}>Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-muted/40">
@@ -139,19 +179,26 @@ export default function OrdersPage() {
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold">Orders</h1>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button variant="outline" size="sm" className="gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1"
+                onClick={fetchOrders}
+                disabled={loading}
+              >
                 <Filter className="h-4 w-4" />
-                Filter
+                Refresh
               </Button>
-              <Select defaultValue="all">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
@@ -167,9 +214,9 @@ export default function OrdersPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{orders.length}</div>
+                <div className="text-2xl font-bold">{totalOrders}</div>
                 <p className="text-xs text-muted-foreground">
-                  +12% from last month
+                  All time orders
                 </p>
               </CardContent>
             </Card>
@@ -177,16 +224,11 @@ export default function OrdersPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Processing
+                  Pending
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {
-                    orders.filter((order) => order.status === 'Processing')
-                      .length
-                  }
-                </div>
+                <div className="text-2xl font-bold">{processingOrders}</div>
                 <p className="text-xs text-muted-foreground">
                   Awaiting fulfillment
                 </p>
@@ -195,14 +237,12 @@ export default function OrdersPage() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Shipped</CardTitle>
+                <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {orders.filter((order) => order.status === 'Shipped').length}
-                </div>
+                <div className="text-2xl font-bold">{confirmedOrders}</div>
                 <p className="text-xs text-muted-foreground">
-                  In transit to customers
+                  Payment completed
                 </p>
               </CardContent>
             </Card>
@@ -215,13 +255,10 @@ export default function OrdersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  $
-                  {orders
-                    .reduce((sum, order) => sum + order.total, 0)
-                    .toFixed(2)}
+                  ₹{totalRevenue.toFixed(2)}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  +8.2% from last month
+                  Total earnings
                 </p>
               </CardContent>
             </Card>
@@ -235,8 +272,8 @@ export default function OrdersPage() {
                   <TableHead className="w-[50px]">
                     <Checkbox
                       checked={
-                        selectedOrders.length === orders.length &&
-                        orders.length > 0
+                        selectedOrders.length === filteredOrders.length &&
+                        filteredOrders.length > 0
                       }
                       onCheckedChange={toggleSelectAll}
                       aria-label="Select all orders"
@@ -247,71 +284,82 @@ export default function OrdersPage() {
                   <TableHead className="hidden md:table-cell">Date</TableHead>
                   <TableHead className="hidden md:table-cell">Items</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedOrders.includes(order.id)}
-                        onCheckedChange={() => toggleOrderSelection(order.id)}
-                        aria-label={`Select order ${order.id}`}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>
-                      <div>{order.customer}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.email}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {order.date}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {order.items}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.status === 'Delivered'
-                            ? 'default'
-                            : order.status === 'Processing'
-                              ? 'secondary'
-                              : order.status === 'Shipped'
-                                ? 'outline'
-                                : 'destructive'
-                        }
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>${order.total.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            Update Status
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {filteredOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      {statusFilter === 'all' ? 'No orders found' : `No ${statusFilter} orders found`}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredOrders.map((order) => {
+                    const customerInfo = getCustomerInfo(order.user_id);
+                    const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                    
+                    return (
+                      <TableRow key={order.order_id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOrders.includes(order.order_id)}
+                            onCheckedChange={() => toggleOrderSelection(order.order_id)}
+                            aria-label={`Select order ${order.order_id}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{order.order_id}</TableCell>
+                        <TableCell>
+                         
+                          <div className="text-sm text-muted-foreground">
+                            {order.user_firstname}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {formatDate(order.created_at)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {totalItems}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusVariant(order.status)}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={order.payment_status === 'completed' ? 'default' : 'secondary'}
+                          >
+                            {order.payment_status || 'Pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>₹{order.total_amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <ShoppingCart className="mr-2 h-4 w-4" />
+                                Update Status
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </div>
@@ -319,14 +367,14 @@ export default function OrdersPage() {
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing <strong>1</strong> to <strong>8</strong> of{' '}
-              <strong>24</strong> orders
+              Showing <strong>{filteredOrders.length}</strong> of{' '}
+              <strong>{totalOrders}</strong> orders
             </div>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" disabled>
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled>
                 Next
               </Button>
             </div>

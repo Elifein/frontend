@@ -1,25 +1,7 @@
 'use client';
 
-import type React from 'react';
-
-import { useState } from 'react';
-import Link from 'next/link';
-import {
-  Search,
-  Plus,
-  Filter,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Mail,
-  PhoneIcon,
-  MapPin,
-  ShoppingBag,
-  ArrowUpDown,
-  Download,
-  Upload,
-} from 'lucide-react';
-
+import { useState, useEffect } from 'react';
+import { Search, Filter, MoreHorizontal, Mail, CheckCircle, Loader2, Trash2, ArrowUpDown } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import {
@@ -53,221 +35,156 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../../components/ui/dialog';
-import { Label } from '../../../components/ui/label';
+import axiosInstance from '../../../lib/axiosInstance';
+import { toast } from 'sonner';
 
-// Sample customers data
-const customers = [
-  {
-    id: 'CUST-001',
-    name: 'John Smith',
-    email: 'john.smith@example.com',
-    phone: '(555) 123-4567',
-    location: 'New York, NY',
-    totalSpent: 349.97,
-    totalOrders: 3,
-    lastOrder: '2023-06-12',
-    status: 'Active',
-    dateJoined: '2023-01-15',
-  },
-  {
-    id: 'CUST-002',
-    name: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
-    phone: '(555) 987-6543',
-    location: 'Los Angeles, CA',
-    totalSpent: 129.5,
-    totalOrders: 1,
-    lastOrder: '2023-06-11',
-    status: 'Active',
-    dateJoined: '2023-05-22',
-  },
-  {
-    id: 'CUST-003',
-    name: 'Michael Brown',
-    email: 'mbrown@example.com',
-    phone: '(555) 456-7890',
-    location: 'Chicago, IL',
-    totalSpent: 549.98,
-    totalOrders: 4,
-    lastOrder: '2023-06-10',
-    status: 'Active',
-    dateJoined: '2022-11-03',
-  },
-  {
-    id: 'CUST-004',
-    name: 'Emily Davis',
-    email: 'emily.davis@example.com',
-    phone: '(555) 234-5678',
-    location: 'Houston, TX',
-    totalSpent: 45.75,
-    totalOrders: 1,
-    lastOrder: '2023-06-09',
-    status: 'Inactive',
-    dateJoined: '2023-03-17',
-  },
-  {
-    id: 'CUST-005',
-    name: 'David Wilson',
-    email: 'dwilson@example.com',
-    phone: '(555) 876-5432',
-    location: 'Miami, FL',
-    totalSpent: 189.0,
-    totalOrders: 2,
-    lastOrder: '2023-06-08',
-    status: 'Active',
-    dateJoined: '2023-02-28',
-  },
-  {
-    id: 'CUST-006',
-    name: 'Jessica Taylor',
-    email: 'jtaylor@example.com',
-    phone: '(555) 345-6789',
-    location: 'Seattle, WA',
-    totalSpent: 112.5,
-    totalOrders: 1,
-    lastOrder: '2023-06-07',
-    status: 'Active',
-    dateJoined: '2023-04-11',
-  },
-  {
-    id: 'CUST-007',
-    name: 'Robert Martinez',
-    email: 'rmartinez@example.com',
-    phone: '(555) 654-3210',
-    location: 'Denver, CO',
-    totalSpent: 67.25,
-    totalOrders: 1,
-    lastOrder: '2023-06-06',
-    status: 'Inactive',
-    dateJoined: '2023-01-09',
-  },
-  {
-    id: 'CUST-008',
-    name: 'Amanda Lee',
-    email: 'alee@example.com',
-    phone: '(555) 789-0123',
-    location: 'Boston, MA',
-    totalSpent: 454.99,
-    totalOrders: 3,
-    lastOrder: '2023-06-05',
-    status: 'Active',
-    dateJoined: '2022-12-14',
-  },
-];
+// Type definitions based on API response
+interface User {
+  user_id: string;
+  user_email: string;
+  user_firstname: string;
+  user_lastname: string;
+}
 
-export default function CustomersPage() {
-  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+interface EndUsersStats {
+  verified_users_count: number;
+  verified_users: User[];
+}
+
+interface ApiResponse {
+  status: number;
+  data: EndUsersStats;
+}
+
+export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
-  const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'United States',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredCustomers = customers.filter((customer) => {
-    // Search filter
+  // Fetch users from backend
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Make API call
+      const response = await axiosInstance.get('/endusers-stats/');
+      console.log('API Response:', response); // Debug: Log full response
+
+      // Handle [status, data] response structure
+      const responseData = response.data;
+      if (!Array.isArray(responseData) || responseData.length < 2) {
+        throw new Error('Invalid API response format: Expected [status, data]');
+      }
+
+      const [status, data] = responseData;
+      console.log('Status:', status, 'Data:', data); // Debug: Log status and data
+
+      if (status !== 200) {
+        throw new Error(`API request failed with status: ${status}`);
+      }
+
+      // Ensure verified_users is an array, fallback to empty array if undefined
+      const verifiedUsers = Array.isArray(data?.verified_users)
+        ? data.verified_users
+        : [];
+      console.log('Verified Users:', verifiedUsers); // Debug: Log verified users
+
+      setUsers(verifiedUsers);
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch users';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setUsers([]); // Set to empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Filter users based on search
+  const filteredUsers = Array.isArray(users) ? users.filter((user) => {
     const matchesSearch =
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.id.toLowerCase().includes(searchQuery.toLowerCase());
+      `${user.user_firstname} ${user.user_lastname}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.user_id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Status filter
-    const matchesStatus =
-      statusFilter === 'all' ||
-      customer.status.toLowerCase() === statusFilter.toLowerCase();
+    // Since all users are verified, only apply status filter if explicitly set to 'verified'
+    const matchesStatus = statusFilter === 'all' || statusFilter === 'verified';
 
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
-  const toggleCustomerSelection = (customerId: string) => {
-    setSelectedCustomers((prev) =>
-      prev.includes(customerId)
-        ? prev.filter((id) => id !== customerId)
-        : [...prev, customerId]
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
     );
   };
 
   const toggleSelectAll = () => {
-    if (selectedCustomers.length === filteredCustomers.length) {
-      setSelectedCustomers([]);
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
     } else {
-      setSelectedCustomers(filteredCustomers.map((customer) => customer.id));
+      setSelectedUsers(filteredUsers.map((user) => user.user_id));
     }
   };
 
-  const handleDeleteCustomer = (customerId: string) => {
-    setCustomerToDelete(customerId);
+  const handleDeleteUser = (userId: string) => {
+    setUserToDelete(userId);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
-    // In a real app, you would call an API to delete the customer
-    console.log(`Deleting customer: ${customerToDelete}`);
-
-    // Close dialog and reset state
+    // In a real app, you would call an API to delete the user
+    console.log(`Deleting user: ${userToDelete}`);
     setIsDeleteDialogOpen(false);
-    setCustomerToDelete(null);
+    setUserToDelete(null);
   };
 
   const handleBulkDelete = () => {
-    // In a real app, you would call an API to delete multiple customers
-    console.log(`Deleting customers: ${selectedCustomers.join(', ')}`);
-    setSelectedCustomers([]);
+    // In a real app, you would call an API to delete multiple users
+    console.log(`Deleting users: ${selectedUsers.join(', ')}`);
+    setSelectedUsers([]);
   };
 
-  const handleAddCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading users...</span>
+      </div>
+    );
+  }
 
-    try {
-      // In a real app, you would call an API to add the customer
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Reset form and close dialog
-      setNewCustomer({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: 'United States',
-      });
-      setIsAddCustomerDialogOpen(false);
-    } catch (err) {
-      console.error('Failed to add customer', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setNewCustomer((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={fetchUsers}>Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Customers</h1>
-          <p className="text-muted-foreground">Manage your customer database</p>
+          <h1 className="text-2xl font-bold">Users</h1>
+          <p className="text-muted-foreground">Manage your verified user database</p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -275,29 +192,23 @@ export default function CustomersPage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search customers..."
+              placeholder="Search users..."
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
-          <Button onClick={() => setIsAddCustomerDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
         </div>
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Verification Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="verified">Verified</SelectItem>
           </SelectContent>
         </Select>
 
@@ -305,24 +216,12 @@ export default function CustomersPage() {
           <Filter className="h-4 w-4" />
           <span className="sr-only">More filters</span>
         </Button>
-
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm">
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-        </div>
       </div>
 
-      {selectedCustomers.length > 0 && (
+      {selectedUsers.length > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-md bg-muted p-2">
           <span className="text-sm">
-            {selectedCustomers.length}{' '}
-            {selectedCustomers.length === 1 ? 'customer' : 'customers'} selected
+            {selectedUsers.length} {selectedUsers.length === 1 ? 'user' : 'users'} selected
           </span>
           <Button variant="outline" size="sm" onClick={handleBulkDelete}>
             <Trash2 className="mr-2 h-4 w-4" />
@@ -337,96 +236,60 @@ export default function CustomersPage() {
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox
-                  checked={
-                    selectedCustomers.length === filteredCustomers.length &&
-                    filteredCustomers.length > 0
-                  }
+                  checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                   onCheckedChange={toggleSelectAll}
-                  aria-label="Select all customers"
+                  aria-label="Select all users"
                 />
               </TableHead>
               <TableHead>
                 <div className="flex items-center">
-                  Customer
+                  User
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </div>
               </TableHead>
-              <TableHead className="hidden md:table-cell">Contact</TableHead>
-              <TableHead className="hidden md:table-cell">Location</TableHead>
-              <TableHead>
-                <div className="flex items-center justify-end">
-                  Total Spent
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </div>
-              </TableHead>
-              <TableHead className="text-center">Orders</TableHead>
-              <TableHead className="hidden md:table-cell">Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Verification Status</TableHead>
+              {/* <TableHead className="text-right">Actions</TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCustomers.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  No customers found.
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No verified users found.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
+              filteredUsers.map((user) => (
+                <TableRow key={user.user_id}>
                   <TableCell>
                     <Checkbox
-                      checked={selectedCustomers.includes(customer.id)}
-                      onCheckedChange={() =>
-                        toggleCustomerSelection(customer.id)
-                      }
-                      aria-label={`Select ${customer.name}`}
+                      checked={selectedUsers.includes(user.user_id)}
+                      onCheckedChange={() => toggleUserSelection(user.user_id)}
+                      aria-label={`Select ${user.user_firstname} ${user.user_lastname}`}
                     />
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{customer.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {customer.id}
+                    <div className="font-medium">
+                      {user.user_firstname} {user.user_lastname}
                     </div>
+                    {/* <div className="text-sm text-muted-foreground">
+                      {user.user_id}
+                    </div> */}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     <div className="flex items-center gap-1">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{customer.email}</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <PhoneIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{customer.phone}</span>
+                      <span className="text-sm">{user.user_email}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{customer.location}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    ${customer.totalSpent.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                      <span>{customer.totalOrders}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Last: {customer.lastOrder}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-center">
-                    <Badge
-                      variant={
-                        customer.status === 'Active' ? 'default' : 'secondary'
-                      }
-                    >
-                      {customer.status}
+                  <TableCell>
+                    <Badge variant="default">
+                      <CheckCircle className="mr-1 h-4 w-4" />
+                      Verified
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  {/* <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -435,34 +298,16 @@ export default function CustomersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/customers/${customer.id}`}
-                            className="flex items-center"
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/customers/${customer.id}/orders`}
-                            className="flex items-center"
-                          >
-                            <ShoppingBag className="mr-2 h-4 w-4" />
-                            View Orders
-                          </Link>
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDeleteCustomer(customer.id)}
+                          onClick={() => handleDeleteUser(user.user_id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))
             )}
@@ -473,8 +318,8 @@ export default function CustomersPage() {
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing <strong>1</strong> to{' '}
-          <strong>{filteredCustomers.length}</strong> of{' '}
-          <strong>{customers.length}</strong> customers
+          <strong>{filteredUsers.length}</strong> of{' '}
+          <strong>{users.length}</strong> verified users
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" disabled>
@@ -486,152 +331,22 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Are you sure you want to delete this customer?
-            </DialogTitle>
+            <DialogTitle>Are you sure you want to delete this user?</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete the
-              customer and all associated data.
+              This action cannot be undone. This will permanently delete the user and all associated data.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
-              Delete Customer
+              Delete User
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Customer Dialog */}
-      <Dialog
-        open={isAddCustomerDialogOpen}
-        onOpenChange={setIsAddCustomerDialogOpen}
-      >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New Customer</DialogTitle>
-            <DialogDescription>
-              Enter the customer details below to create a new customer account.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAddCustomer}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={newCustomer.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={newCustomer.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={newCustomer.phone}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={newCustomer.address}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={newCustomer.city}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={newCustomer.state}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="zipCode">ZIP Code</Label>
-                  <Input
-                    id="zipCode"
-                    name="zipCode"
-                    value={newCustomer.zipCode}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Select
-                  value={newCustomer.country}
-                  onValueChange={(value) =>
-                    setNewCustomer((prev) => ({ ...prev, country: value }))
-                  }
-                >
-                  <SelectTrigger id="country">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="United States">United States</SelectItem>
-                    <SelectItem value="Canada">Canada</SelectItem>
-                    <SelectItem value="United Kingdom">
-                      United Kingdom
-                    </SelectItem>
-                    <SelectItem value="Australia">Australia</SelectItem>
-                    <SelectItem value="Germany">Germany</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddCustomerDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Adding...' : 'Add Customer'}
-              </Button>
-            </DialogFooter>
-          </form>
         </DialogContent>
       </Dialog>
     </div>

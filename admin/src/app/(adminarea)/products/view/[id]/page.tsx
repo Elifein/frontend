@@ -255,7 +255,7 @@ export default function ViewProductPage({ params }: Props) {
         </div>
 
         <div className="flex gap-2">
-          <Dialog
+          {/* <Dialog
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
           >
@@ -291,7 +291,7 @@ export default function ViewProductPage({ params }: Props) {
                 </Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
 
           <Button variant="outline" asChild>
             <Link href="/products">Back to Products</Link>

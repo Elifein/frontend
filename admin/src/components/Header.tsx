@@ -67,12 +67,12 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
+            {/* <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                 3
               </span>
-            </Button>
+            </Button> */}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -85,14 +85,14 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                {/* <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator /> */}
+                {/* <DropdownMenuItem>
                   <Link href="/profile">Profile</Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
 
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuItem>Settings</DropdownMenuItem> */}
+                {/* <DropdownMenuSeparator /> */}
                 <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -9,6 +9,7 @@ import axiosInstance from '../lib/axiosInstance';
 import { useState, FormEvent } from 'react';
 import useStore from '../lib/Zustand';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const { login } = useStore();
@@ -47,17 +48,50 @@ export default function LoginPage() {
         password,
       });
 
-      if (response.status === 200) {
-        const { token } = response.data.data;
-        login(token);
-        router.push('/dashboard');
-      }
+      console.log('Full response:', response); // Debug log
+      console.log('Response data:', response.data); // Debug log
 
-      console.log('Login successful:', response.data);
-    } catch {
-      setErrors({ general: 'Something went wrong. Please try again.' });
+      // Check the status_code from your API response, not HTTP status
+      const { status_code, message, timestamp, data } = response.data;
+
+      if (status_code === 200) {
+        // Normal login - token should be in data
+        const { token } = data;
+        login(token);
+        toast.success(message || 'Login successful!');
+        router.push('/dashboard');
+      } else if (status_code === 201) {
+        // Password change required
+        toast.success(message, {
+          description: new Date(timestamp).toLocaleString(),
+        });
+        
+        // Pass email as query parameter (same pattern as admin login)
+        router.push(`/resetpassword?email=${encodeURIComponent(email)}`);
+      } else {
+        // Handle other status codes from your API
+        setErrors({ general: message || 'Login failed' });
+        toast.error(message || 'Login failed');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error); // Debug log
+      
+      // Check if it's an axios error with response
+      if (error.response) {
+        console.log('Error response:', error.response.data); // Debug log
+        const { status_code, message } = error.response.data;
+        
+        // Handle API error responses
+        setErrors({ general: message || 'Something went wrong. Please try again.' });
+        toast.error(message || 'Something went wrong. Please try again.');
+      } else {
+        // Network or other errors
+        setErrors({ general: 'Network error. Please check your connection.' });
+        toast.error('Network error. Please check your connection.');
+      }
     }
   };
+
   return (
     <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
       <form
@@ -112,6 +146,10 @@ export default function LoginPage() {
                 <p className="text-red-500 text-xs">{errors.password}</p>
               )}
             </div>
+
+            {errors.general && (
+              <p className="text-red-500 text-xs text-center">{errors.general}</p>
+            )}
 
             <Button className="w-full" type="submit">
               Sign In

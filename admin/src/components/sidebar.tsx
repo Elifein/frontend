@@ -33,8 +33,8 @@ const SidebarAdmin: React.FC<SidebarAdminProps> = ({
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Orders', href: '/orders', icon: ShoppingCart },
     { name: 'Customers', href: '/customers', icon: Users },
-    { name: 'Employees', href: '/employees', icon: Users },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    // { name: 'Employees', href: '/employees', icon: Users },
+    // { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (

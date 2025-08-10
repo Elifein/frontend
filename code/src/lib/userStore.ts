@@ -1,17 +1,17 @@
-// lib/Zustand.ts
+// lib/userStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface User {
-  userId?: string;
-  user_login_id?: string;
-  role: string;
+  user_id?: string;
   email: string;
   name?: string;
+  phone?: string;
+  address?: string;
   [key: string]: any; // For additional user properties
 }
 
-interface AuthStore {
+interface UserAuthStore {
   // Auth state
   token: string | null;
   user: User | null;
@@ -25,13 +25,15 @@ interface AuthStore {
   // Validation functions
   validateEmail: (email: string) => { isValid: boolean; error?: string };
   validatePassword: (password: string) => { isValid: boolean; error?: string };
+  validatePhone: (phone: string) => { isValid: boolean; error?: string };
   
   // Token utilities
   isTokenExpired: () => boolean;
   getTokenPayload: () => any | null;
+  checkAuth: () => Promise<boolean>;
 }
 
-const useStore = create<AuthStore>()(
+const useUserStore = create<UserAuthStore>()(
   persist(
     (set, get) => ({
       // Initial state
@@ -49,14 +51,14 @@ const useStore = create<AuthStore>()(
             try {
               const tokenPayload = JSON.parse(atob(token.split('.')[1]));
               user = {
-                userId: tokenPayload.userId,
-                user_login_id: tokenPayload.userId,
-                role: tokenPayload.role,
+                user_id: tokenPayload.user_id || tokenPayload.userId,
                 email: tokenPayload.email || '',
                 name: tokenPayload.name,
+                phone: tokenPayload.phone,
+                address: tokenPayload.address,
               };
             } catch (error) {
-              console.error('Error parsing token payload:', error);
+              console.error('Error parsing user token payload:', error);
             }
           }
 
@@ -66,7 +68,7 @@ const useStore = create<AuthStore>()(
             isAuthenticated: true,
           });
         } catch (error) {
-          console.error('Login error:', error);
+          console.error('User login error:', error);
         }
       },
 
@@ -77,6 +79,8 @@ const useStore = create<AuthStore>()(
           user: null,
           isAuthenticated: false,
         });
+        // Clear any other user-related data if needed
+        localStorage.removeItem('cart'); // Clear cart on logout
       },
 
       // Update user data
@@ -109,27 +113,22 @@ const useStore = create<AuthStore>()(
           return { isValid: false, error: 'Password is required' };
         }
         
-        if (password.length < 8) {
-          return { isValid: false, error: 'Password must be at least 8 characters long' };
+        if (password.length < 6) {
+          return { isValid: false, error: 'Password must be at least 6 characters long' };
         }
         
-        // Check for uppercase, lowercase, number, and special character
-        const hasUpperCase = /[A-Z]/.test(password);
-        const hasLowerCase = /[a-z]/.test(password);
-        const hasNumber = /[0-9]/.test(password);
-        const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+        return { isValid: true };
+      },
+
+      // Phone validation
+      validatePhone: (phone: string) => {
+        if (!phone) {
+          return { isValid: false, error: 'Phone number is required' };
+        }
         
-        if (!hasUpperCase) {
-          return { isValid: false, error: 'Password must contain at least one uppercase letter' };
-        }
-        if (!hasLowerCase) {
-          return { isValid: false, error: 'Password must contain at least one lowercase letter' };
-        }
-        if (!hasNumber) {
-          return { isValid: false, error: 'Password must contain at least one number' };
-        }
-        if (!hasSpecialChar) {
-          return { isValid: false, error: 'Password must contain at least one special character' };
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+          return { isValid: false, error: 'Please enter a valid 10-digit phone number' };
         }
         
         return { isValid: true };
@@ -145,7 +144,7 @@ const useStore = create<AuthStore>()(
           const currentTime = Math.floor(Date.now() / 1000);
           return tokenPayload.exp < currentTime;
         } catch (error) {
-          console.error('Error checking token expiration:', error);
+          console.error('Error checking user token expiration:', error);
           return true;
         }
       },
@@ -158,17 +157,43 @@ const useStore = create<AuthStore>()(
         try {
           return JSON.parse(atob(token.split('.')[1]));
         } catch (error) {
-          console.error('Error parsing token payload:', error);
+          console.error('Error parsing user token payload:', error);
           return null;
         }
       },
+
+      // Check authentication status
+      checkAuth: async () => {
+        const { token, isTokenExpired, logout } = get();
+        
+        if (!token) {
+          return false;
+        }
+        
+        if (isTokenExpired()) {
+          logout();
+          return false;
+        }
+        
+        // Optional: Verify token with backend
+        // try {
+        //   const response = await axiosInstance.get('/verify-token', {
+        //     headers: { Authorization: `Bearer ${token}` }
+        //   });
+        //   return response.status === 200;
+        // } catch (error) {
+        //   logout();
+        //   return false;
+        // }
+        
+        return true;
+      },
     }),
     {
-      name: 'auth-storage', // Storage key
+      name: 'user-auth-storage', // Different storage key from admin
       storage: createJSONStorage(() => {
-        // Use sessionStorage for more security, or localStorage for persistence
         if (typeof window !== 'undefined') {
-          return localStorage; // Change to sessionStorage for session-only storage
+          return localStorage; // Use localStorage for user auth persistence
         }
         return {
           getItem: () => null,
@@ -180,4 +205,4 @@ const useStore = create<AuthStore>()(
   )
 );
 
-export default useStore;
+export default useUserStore;
