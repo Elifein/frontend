@@ -1477,7 +1477,7 @@ export default function EditCategoryPage({ params }: Props) {
           <h1 className="text-2xl font-bold">Edit Category</h1>
         </div>
 
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Dialog
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
@@ -1522,7 +1522,7 @@ export default function EditCategoryPage({ params }: Props) {
           <Button type="submit" form="category-form" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : 'Save Changes'}
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {error && (

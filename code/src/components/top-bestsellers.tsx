@@ -334,12 +334,16 @@ export function TopBestsellers() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading best sellers...</div>;
-  }
+  return <div className="text-center py-8">Loading best sellers...</div>;
+}
 
-  if (error) {
-    return <div className="text-center py-8 text-red-600">Error: {error}</div>;
-  }
+if (error || featuredProducts.length === 0) {
+  return (
+    <div className="text-center py-8 text-gray-600">
+      No featured products available
+    </div>
+  );
+}
 
   return (
     <div className="container mx-auto px-4 py-8 relative">

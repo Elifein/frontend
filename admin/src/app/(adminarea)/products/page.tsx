@@ -39,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../components/ui/select';
+import { toast } from 'sonner'; // Add this import
 import axiosInstance from '../../../lib/axiosInstance';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
@@ -94,30 +95,63 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const response = await axiosInstance.get('/products/');
+        
         // Handle successful response
         if (response.status === 200) {
           // Check if response.data is an array (direct product list) or APIResponse
           if (Array.isArray(response.data)) {
             setProducts(response.data);
+            if (response.data.length === 0) {
+              toast(
+  <div>
+    <strong>No products</strong>
+    <div className="text-sm text-muted-foreground">
+      No products found in your inventory.
+    </div>
+  </div>
+);
+            }
           } else if (response.data?.status_code === 404) {
-            setError('No products found.');
             setProducts([]);
+            toast(
+  <div>
+    <strong>No products</strong>
+    <div className="text-sm text-muted-foreground">
+      No products found in your inventory.
+    </div>
+  </div>
+);
           } else {
             throw new Error('Unexpected response format');
           }
         }
       }
       catch (err: unknown) {
-        let errorMessage = 'An error occurred while updating the category';
+        let errorMessage = 'An error occurred while fetching products';
       
         if (axios.isAxiosError(err)) {
+          // Check if it's a 404 for no products
+          if (err.response?.status === 404) {
+            setProducts([]);
+            toast(
+  <div>
+    <strong>No products</strong>
+    <div className="text-sm text-muted-foreground">
+      No products found in your inventory.
+    </div>
+  </div>
+);
+            return;
+          }
           errorMessage = err.response?.data?.detail || err.message;
         } else if (err instanceof Error) {
           errorMessage = err.message;
@@ -125,13 +159,11 @@ export default function ProductsPage() {
       
         setError(errorMessage);
         setProducts([]);
-        console.error('Update error:', err);
+        console.error('Fetch error:', err);
+      } finally {
+        setLoading(false);
       }
     }; 
-      
-      
-      
-    
 
     const fetchCategories = async () => {
       try {
@@ -197,13 +229,26 @@ export default function ProductsPage() {
     try {
       await axiosInstance.put(`products/${productId}/delete`);
       setProducts((prev) => prev.filter((p) => p.product_id !== productId));
+      toast(
+  <div>
+    <strong>Success</strong>
+    <div className="text-sm text-muted-foreground">
+      Product deleted successfully.
+    </div>
+  </div>
+);
     } catch (err) {
       console.error('Error deleting product:', err);
-      alert('Failed to delete the product. Please try again.');
+      toast(
+  <div>
+    <strong>Error</strong>
+    <div className="text-sm text-muted-foreground">
+      Failed to delete product.
+    </div>
+  </div>
+);
     }
   };
-  
-  
 
   const handleBulkDelete = async () => {
     if (!confirm('Are you sure you want to delete the selected products?')) return;
@@ -218,13 +263,26 @@ export default function ProductsPage() {
         prev.filter((p) => !selectedProducts.includes(p.product_id))
       );
       setSelectedProducts([]);
+     toast(
+  <div>
+    <strong>Success</strong>
+    <div className="text-sm text-muted-foreground">
+      {selectedProducts.length} products deleted successfully.
+    </div>
+  </div>
+);
     } catch (err) {
       console.error('Error deleting products:', err);
-      alert('Some products could not be deleted. Please try again.');
+      toast(
+  <div>
+    <strong>Error</strong>
+    <div className="text-sm text-muted-foreground">
+     product cant be deleted please try again.
+    </div>
+  </div>
+);
     }
   };
-  
-  
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -252,13 +310,10 @@ export default function ProductsPage() {
               Add Product
             </Link>
           </Button>
-          {error && (
-            <div className="mb-4 rounded-md border border-red-500 bg-red-100 p-4 text-red-700">
-              {error}
-            </div>
-          )}
         </div>
       </div>
+
+
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -363,7 +418,13 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  Loading products...
+                </TableCell>
+              </TableRow>
+            ) : filteredProducts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="h-24 text-center">
                   No products found.
@@ -466,8 +527,6 @@ export default function ProductsPage() {
                         >
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
-                        
-
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -476,33 +535,33 @@ export default function ProductsPage() {
             )}
           </TableBody>
         </Table>
-        <Dialog open={!!deleteProductId} onOpenChange={() => setDeleteProductId(null)}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Are you sure?</DialogTitle>
-      <DialogDescription>
-        This action cannot be undone. It will permanently delete this product from your inventory.
-      </DialogDescription>
-    </DialogHeader>
-    <DialogFooter>
-      <Button variant="outline" onClick={() => setDeleteProductId(null)}>
-        Cancel
-      </Button>
-      <Button
-        variant="destructive"
-        onClick={async () => {
-          if (deleteProductId) {
-            await handleDelete(deleteProductId);
-            setDeleteProductId(null);
-          }
-        }}
-      >
-        Delete
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
 
+        <Dialog open={!!deleteProductId} onOpenChange={() => setDeleteProductId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. It will permanently delete this product from your inventory.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteProductId(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (deleteProductId) {
+                    await handleDelete(deleteProductId);
+                    setDeleteProductId(null);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="mt-4 flex items-center justify-between">

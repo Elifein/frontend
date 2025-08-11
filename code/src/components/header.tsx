@@ -762,8 +762,8 @@ export function Header() {
               <div className="flex items-center">
                 <Logo />
                 <div className="flex flex-col">
-                  <span className="text-[#1a4e78] font-bold text-lg">Elifein</span>
-                  <span className="text-[#1a4e78] text-xs">EVERYTHING CHRISTIAN FOR LESS!</span>
+                  <span className="text-[#1a4e78] font-bold text-lg">ELIFE IN</span>
+                  <span className="text-[#1a4e78] text-xs">REACH TO PREACH</span>
                 </div>
               </div>
             </Link>

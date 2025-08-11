@@ -151,7 +151,7 @@ export default function LoginPage() {
               <p className="text-red-500 text-xs text-center">{errors.general}</p>
             )}
 
-            <Button className="w-full" type="submit">
+            <Button className="w-full cursor-pointer" type="submit">
               Sign In
             </Button>
           </div>
