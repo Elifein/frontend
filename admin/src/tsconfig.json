@@ -28,7 +28,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "../../code/src/components/VerifyClient.tsx"  ],
   "exclude": [
     "node_modules"
   ]
