@@ -75,3 +75,4 @@ export function FeaturedStores() {
     </div>
   );
 }
+export default FeaturedStores;

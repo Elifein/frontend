@@ -1,102 +1,194 @@
-'use client';
+// 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import axiosInstance from '../lib/axiosInstance';
+// import { useState, useEffect } from 'react';
+// import Link from 'next/link';
+// import axiosInstance from '../lib/axiosInstance';
+
+// interface Category {
+//   category_id: string;
+//   category_name: string;
+//   slug: string;
+//   subcategories: {
+//     subcategory_id: string;
+//     subcategory_name: string;
+//     slug: string;
+//   }[];
+// }
+
+// export function SidebarCategories() {
+//   const [categories, setCategories] = useState<Category[]>([]);
+//   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+//   // Fetch categories
+//   useEffect(() => {
+//     const fetchCategories = async () => {
+//       try {
+//         const response = await axiosInstance.get('get-menu-categories/');
+//         setCategories(response.data.data);
+//       } catch (error) {
+//         console.error('Error fetching categories for sidebar:', error);
+//         setCategories([]);
+//       }
+//     };
+
+//     fetchCategories();
+//   }, []);
+
+//   // Toggle subcategory visibility
+//   const toggleSubcategories = (categoryId: string) => {
+//     setExpandedCategories((prev) =>
+//       prev.includes(categoryId)
+//         ? prev.filter((id) => id !== categoryId)
+//         : [...prev, categoryId]
+//     );
+//   };
+
+//   return (
+//     <div className="bg-gray-50 rounded-md border border-gray-200 overflow-hidden">
+//       <div className="bg-gray-200 p-2 font-semibold">BROWSE</div>
+//       <ul className="divide-y divide-gray-200">
+//         {categories.length > 0 ? (
+//           categories.map((category) => (
+//             <li key={category.category_id}>
+//               <div className="flex items-center justify-between px-3 py-1.5">
+//                 <Link
+//                   href={`/${category.slug}`}
+//                   className="block text-sm hover:bg-gray-100 transition-colors flex-grow"
+//                 >
+//                   {category.category_name}
+//                 </Link>
+//                 {category.subcategories.length > 0 && (
+//                   <button
+//                     onClick={() => toggleSubcategories(category.category_id)}
+//                     className="text-sm text-gray-500 hover:text-gray-700"
+//                   >
+//                     {expandedCategories.includes(category.category_id) ? '−' : '+'}
+//                   </button>
+//                 )}
+//               </div>
+//               {category.subcategories.length > 0 &&
+//                 expandedCategories.includes(category.category_id) && (
+//                   <ul className="pl-4 divide-y divide-gray-200 bg-gray-100">
+//                     {category.subcategories.map((subcategory) => (
+//                       <li key={subcategory.subcategory_id}>
+//                         <Link
+//                           href={`${subcategory.slug}`}
+//                           className="block px-3 py-1.5 text-sm hover:bg-gray-200 transition-colors"
+//                         >
+//                           {subcategory.subcategory_name}
+//                         </Link>
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 )}
+//             </li>
+//           ))
+//         ) : (
+//           <li className="px-3 py-1.5 text-sm text-gray-600">
+//             No categories available
+//           </li>
+//         )}
+//       </ul>
+
+//       {/* <div className="bg-gray-200 p-2 font-semibold mt-4">REFINE BY</div> */}
+//       {/* <div className="p-3">
+//         <div className="flex items-center justify-between">
+//           <span className="text-sm font-medium">Top Rated</span>
+//           <span className="text-sm text-gray-500">+</span>
+//         </div>
+//       </div> */}
+//     </div>
+//   );
+// }
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import axiosInstance from '../lib/axiosInstance'
 
 interface Category {
-  category_id: string;
-  category_name: string;
-  slug: string;
+  category_id: string
+  category_name: string
+  slug: string
   subcategories: {
-    subcategory_id: string;
-    subcategory_name: string;
-    slug: string;
-  }[];
+    subcategory_id: string
+    subcategory_name: string
+    slug: string
+  }[]
 }
 
-export function SidebarCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+export function SidebarCategories({ initialCategories }: { initialCategories: Category[] }) {
+  const [categories, setCategories] = useState<Category[]>(initialCategories || [])
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
 
-  // Fetch categories
+  // Client-side refetch (optional, keeps data fresh)
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axiosInstance.get('get-menu-categories/');
-        setCategories(response.data.data);
+        const response = await axiosInstance.get('get-menu-categories/')
+        setCategories(response.data.data)
       } catch (error) {
-        console.error('Error fetching categories for sidebar:', error);
-        setCategories([]);
+        console.error('Error fetching categories:', error)
       }
-    };
+    }
+    fetchCategories()
+  }, [])
 
-    fetchCategories();
-  }, []);
-
-  // Toggle subcategory visibility
   const toggleSubcategories = (categoryId: string) => {
-    setExpandedCategories((prev) =>
+    setExpandedCategories(prev =>
       prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
+        ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
-    );
-  };
+    )
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <div className="p-4 space-y-3 animate-pulse">
+        <div className="h-4 bg-gray-200 rounded"></div>
+        <div className="h-4 bg-gray-200 rounded"></div>
+        <div className="h-4 bg-gray-200 rounded"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-gray-50 rounded-md border border-gray-200 overflow-hidden">
       <div className="bg-gray-200 p-2 font-semibold">BROWSE</div>
       <ul className="divide-y divide-gray-200">
-        {categories.length > 0 ? (
-          categories.map((category) => (
-            <li key={category.category_id}>
-              <div className="flex items-center justify-between px-3 py-1.5">
-                <Link
-                  href={`/${category.slug}`}
-                  className="block text-sm hover:bg-gray-100 transition-colors flex-grow"
+        {categories.map((category) => (
+          <li key={category.category_id}>
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <Link href={`/${category.slug}`} className="block text-sm hover:bg-gray-100 flex-grow">
+                {category.category_name}
+              </Link>
+              {category.subcategories.length > 0 && (
+                <button
+                  onClick={() => toggleSubcategories(category.category_id)}
+                  className="text-sm text-gray-500 hover:text-gray-700"
                 >
-                  {category.category_name}
-                </Link>
-                {category.subcategories.length > 0 && (
-                  <button
-                    onClick={() => toggleSubcategories(category.category_id)}
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    {expandedCategories.includes(category.category_id) ? '−' : '+'}
-                  </button>
-                )}
-              </div>
-              {category.subcategories.length > 0 &&
-                expandedCategories.includes(category.category_id) && (
-                  <ul className="pl-4 divide-y divide-gray-200 bg-gray-100">
-                    {category.subcategories.map((subcategory) => (
-                      <li key={subcategory.subcategory_id}>
-                        <Link
-                          href={`${subcategory.slug}`}
-                          className="block px-3 py-1.5 text-sm hover:bg-gray-200 transition-colors"
-                        >
-                          {subcategory.subcategory_name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-            </li>
-          ))
-        ) : (
-          <li className="px-3 py-1.5 text-sm text-gray-600">
-            No categories available
+                  {expandedCategories.includes(category.category_id) ? '−' : '+'}
+                </button>
+              )}
+            </div>
+            {expandedCategories.includes(category.category_id) && (
+              <ul className="pl-4 bg-gray-100">
+                {category.subcategories.map((sub) => (
+                  <li key={sub.subcategory_id}>
+                    <Link
+                      href={`/${sub.slug}`}
+                      className="block px-3 py-1.5 text-sm hover:bg-gray-200"
+                    >
+                      {sub.subcategory_name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
-        )}
+        ))}
       </ul>
-
-      {/* <div className="bg-gray-200 p-2 font-semibold mt-4">REFINE BY</div> */}
-      {/* <div className="p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Top Rated</span>
-          <span className="text-sm text-gray-500">+</span>
-        </div>
-      </div> */}
     </div>
-  );
+  )
 }

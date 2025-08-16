@@ -114,3 +114,4 @@ export function RecentlyViewed() {
     </div>
   );
 }
+export default RecentlyViewed;
