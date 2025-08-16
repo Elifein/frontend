@@ -1,3 +1,4 @@
+
 // 'use client';
 
 // import { useEffect, useState, useRef } from 'react';
@@ -6,13 +7,12 @@
 // import { Search, ShoppingCart, Menu, X, ChevronRight } from 'lucide-react';
 // import { Button } from '../components/ui/button';
 // import { Input } from '../components/ui/input';
-// import { AccountDropdown } from '../components/account-dropdown';
 // import { useMobileMenu } from '../hooks/use-mobile-menu';
 // import { cn } from '../lib/utils';
 // import Logo from './logo';
 // import axiosInstance from '../lib/axiosInstance';
 // import { useCart } from '../lib/cart-context';
-// import { useAuth, authUtils } from '../lib/auth-context';
+// import { useAuth } from '../lib/auth-context';
 // import {
 //   DropdownMenu,
 //   DropdownMenuContent,
@@ -123,7 +123,7 @@
 
 //     document.addEventListener('mousedown', handleClickOutside);
 //     return () => {
-//       document.removeEventListener('mousedown', handleClickOutside);
+//       document.addEventListener('mousedown', handleClickOutside);
 //     };
 //   }, []);
 
@@ -246,8 +246,8 @@
 //               <div className="flex items-center">
 //                 <Logo />
 //                 <div className="flex flex-col">
-//                   <span className="text-[#1a4e78] font-bold text-lg">Elifein</span>
-//                   <span className="text-[#1a4e78] text-xs">EVERYTHING CHRISTIAN FOR LESS!</span>
+//                   <span className="text-[#1a4e78] font-bold text-lg">ELIFE IN</span>
+//                   <span className="text-[#1a4e78] text-xs">REACH TO PREACH</span>
 //                 </div>
 //               </div>
 //             </Link>
@@ -305,7 +305,12 @@
 
 //           <div className="flex items-center space-x-4">
 //             {isAuthenticated ? (
-//               <AccountDropdown />
+//               <button
+//                 onClick={logout}
+//                 className="text-[#1a4e78] hover:underline"
+//               >
+//                 Sign Out
+//               </button>
 //             ) : (
 //               <Link href="/apps/login" className="text-[#1a4e78] hover:underline">
 //                 Sign In
@@ -414,7 +419,15 @@
 //         <div className="h-full overflow-y-auto pt-16 pb-20">
 //           <div className="px-4 py-2 border-b">
 //             {isAuthenticated ? (
-//               <AccountDropdown />
+//               <button
+//                 onClick={() => {
+//                   logout();
+//                   toggle();
+//                 }}
+//                 className="block py-2 text-[#1a4e78] hover:underline"
+//               >
+//                 Sign Out
+//               </button>
 //             ) : (
 //               <Link href="/apps/login" className="block py-2 text-[#1a4e78]">
 //                 Sign In
@@ -458,32 +471,6 @@
 //           <div className="px-4 py-2">
 //             <h3 className="font-bold text-[#1a4e78] mb-2">Account</h3>
 //             <ul className="space-y-2">
-//               {isAuthenticated ? (
-//                 <>
-//                   <li>
-//                     <span className="block py-2 text-[#1a4e78] font-semibold">
-//                       {authUtils.getUserFullName(user)}
-//                     </span>
-//                   </li>
-//                   <li>
-//                     <button
-//                       onClick={() => {
-//                         logout();
-//                         toggle();
-//                       }}
-//                       className="block py-2 text-[#1a4e78] w-full text-left"
-//                     >
-//                       Logout
-//                     </button>
-//                   </li>
-//                 </>
-//               ) : (
-//                 <li>
-//                   <Link href="/apps/login" className="block py-2" onClick={toggle}>
-//                     Sign In
-//                   </Link>
-//                 </li>
-//               )}
 //               <li>
 //                 <Link href="/apps/account" className="block py-2" onClick={toggle}>
 //                   My Account
@@ -511,9 +498,6 @@
 //     </header>
 //   );
 // }
-
-
-
 
 'use client';
 
@@ -568,13 +552,12 @@ export function Header() {
   const { cart, cartCount } = useCart();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
-  // Enhanced debugging for auth state
+  // Debug auth state
   useEffect(() => {
     console.log('Header auth state:', {
       isLoading,
       isAuthenticated,
       user: user ? JSON.stringify(user, null, 2) : null,
-      contextAvailable: !!useAuth,
     });
   }, [isLoading, isAuthenticated, user]);
 
@@ -592,7 +575,7 @@ export function Header() {
     fetchCategories();
   }, []);
 
-  // Handle search with debounce
+  // Search with debounce
   useEffect(() => {
     const handleSearch = async () => {
       if (searchQuery.length < 2) {
@@ -639,7 +622,7 @@ export function Header() {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -652,7 +635,7 @@ export function Header() {
     setShowSearchDropdown(false);
   };
 
-  // Render loading state until auth is initialized
+  // Render loading state until auth initializes
   if (isLoading) {
     return (
       <div className="border-b sticky top-0 bg-white z-50">
@@ -723,7 +706,7 @@ export function Header() {
             </Button>
           </div>
           {showSearchDropdown && (
-            <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-[2000] max-h-96 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
               {isSearchLoading ? (
                 <div className="p-4 text-center text-[#1a4e78]">Loading...</div>
               ) : searchResults.length === 0 ? (
@@ -788,7 +771,7 @@ export function Header() {
               </Button>
             </div>
             {showSearchDropdown && (
-              <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-60 max-h-96 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
                 {isSearchLoading ? (
                   <div className="p-4 text-center text-[#1a4e78]">Loading...</div>
                 ) : searchResults.length === 0 ? (
@@ -1012,5 +995,6 @@ export function Header() {
         </div>
       </div>
     </header>
+ 
   );
 }
